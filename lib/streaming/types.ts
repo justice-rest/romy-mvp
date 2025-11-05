@@ -15,5 +15,5 @@ export interface BaseStreamConfig {
   isNewChat?: boolean
   searchMode?: SearchMode
   modelType?: ModelType
-  promptEnhancement?: string
+  promptEnhancement?: string | null
 }

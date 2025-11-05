@@ -144,10 +144,17 @@ export function createResearcher({
       ...todoTools
     } as ResearcherTools
 
+    // Build system prompt with optional data type enhancements
+    let fullSystemPrompt = `${systemPrompt}\nCurrent date and time: ${currentDate}`
+    
+    if (promptEnhancement) {
+      fullSystemPrompt += `\n\nSPECIAL DATA REQUIREMENTS:\nThe user has specifically requested information about the following data types. You MUST prioritize finding and presenting this information in your research:\n\n${promptEnhancement}`
+    }
+
     // Create streamText-based agent with smoothStream support
     const agentConfig = {
       model: getModel(model),
-      system: `${systemPrompt}\nCurrent date and time: ${currentDate}${promptEnhancement ? `\n\n${promptEnhancement}` : ''}`,
+      system: fullSystemPrompt,
       tools,
       activeTools: activeToolsList,
       stopWhen: stepCountIs(maxSteps),

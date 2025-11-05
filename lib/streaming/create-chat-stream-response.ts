@@ -62,7 +62,7 @@ export async function createChatStreamResponse(
   if (!isNewChat) {
     const loadChatStart = performance.now()
     // Fetch chat data for authorization check and cache it
-    initialChat = await loadChat(chatId, userId)
+    initialChat = await loadChat(chatId, userId || undefined)
     perfTime('loadChat completed', loadChatStart)
 
     // Authorization check: if chat exists, it must belong to the user
@@ -135,7 +135,7 @@ export async function createChatStreamResponse(
           parentTraceId,
           searchMode,
           modelType,
-          promptEnhancement
+          promptEnhancement: promptEnhancement || undefined
         })
 
         // Filter out reasoning parts from messages before converting to model messages

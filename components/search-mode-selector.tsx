@@ -10,7 +10,7 @@ import {
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Check, ChevronsUpDown } from 'lucide-react'
 
-import { DATA_TYPE_CONFIGS, RESEARCH_TYPE_CONFIGS } from '@/lib/config/research-types'
+import { DATA_TYPE_CONFIGS, DataType,RESEARCH_TYPE_CONFIGS } from '@/lib/config/research-types'
 import { SEARCH_MODE_CONFIGS } from '@/lib/config/search-modes'
 import { ModelType } from '@/lib/types/model-type'
 import { SearchMode } from '@/lib/types/search'
@@ -24,13 +24,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 
 interface SearchModeSelectorProps {
   onResearchTypeClick?: (category: string) => void
-  onDataTypeClick?: (dataType: string, promptEnhancement: string) => void
+  onDataTypesChange?: (selectedDataTypes: DataType[]) => void
 }
 
-export function SearchModeSelector({ onResearchTypeClick, onDataTypeClick }: SearchModeSelectorProps) {
+export function SearchModeSelector({ onResearchTypeClick, onDataTypesChange }: SearchModeSelectorProps) {
   const [searchMode, setSearchMode] = useState<SearchMode>('quick')
   const [modelType, setModelType] = useState<ModelType>('speed')
   const [open, setOpen] = useState(false)
+  const [selectedDataTypes, setSelectedDataTypes] = useState<DataType[]>([])
 
   // Load saved preferences
   useEffect(() => {
@@ -65,6 +66,16 @@ export function SearchModeSelector({ onResearchTypeClick, onDataTypeClick }: Sea
     setModelType(newType)
     setCookie('modelType', newType)
   }, [modelType])
+
+  const handleDataTypeToggle = useCallback((dataType: DataType) => {
+    setSelectedDataTypes(prev => {
+      const newSelection = prev.includes(dataType)
+        ? prev.filter(dt => dt !== dataType)
+        : [...prev, dataType]
+      onDataTypesChange?.(newSelection)
+      return newSelection
+    })
+  }, [onDataTypesChange])
 
   const isQualityMode = modelType === 'quality'
 
@@ -188,27 +199,24 @@ export function SearchModeSelector({ onResearchTypeClick, onDataTypeClick }: Sea
                 {/* Data Section */}
                 <CommandGroup>
                   <div className="px-2 py-1 text-[10px] font-medium text-muted-foreground border-t pt-2 mt-1">
-                    Data
+                    Data (Multi-select)
                   </div>
                   {DATA_TYPE_CONFIGS.map(config => {
-                    const handleClick = () => {
-                      onDataTypeClick?.(config.label, config.promptEnhancement)
-                      setOpen(false)
-                    }
+                    const isSelected = selectedDataTypes.includes(config.value)
                     return (
                       <CommandItem
                         key={config.value}
                         value={config.value}
-                        onSelect={handleClick}
-                        onClick={handleClick}
+                        onSelect={() => handleDataTypeToggle(config.value)}
                         className={cn(
                           'flex items-center justify-between px-2 py-2 mb-0.5 rounded-lg text-xs cursor-pointer',
                           'transition-all duration-200',
                           'hover:bg-accent',
-                          'data-[selected=true]:bg-accent'
+                          'data-[selected=true]:bg-accent',
+                          isSelected && 'bg-accent/50'
                         )}
                       >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <div className="flex items-center gap-2 min-w-0 flex-1 pr-4">
                           <HugeiconsIcon 
                             icon={config.icon} 
                             size={20} 
@@ -224,6 +232,12 @@ export function SearchModeSelector({ onResearchTypeClick, onDataTypeClick }: Sea
                             </div>
                           </div>
                         </div>
+                        <Check
+                          className={cn(
+                            'ml-auto h-4 w-4 shrink-0',
+                            isSelected ? 'opacity-100' : 'opacity-0'
+                          )}
+                        />
                       </CommandItem>
                     )
                   })}

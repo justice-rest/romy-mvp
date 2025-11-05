@@ -10,10 +10,9 @@ import { cn } from '@/lib/utils'
 import { extractCitationMapsFromMessages } from '@/lib/utils/citation'
 
 import { useArtifact } from './artifact/artifact-context'
-
+import { AnimatedLogo } from './ui/animated-logo'
 import { ChatError } from './chat-error'
 import { RenderMessage } from './render-message'
-import { AnimatedLogo } from './ui/animated-logo'
 
 // Import section structure interface
 interface ChatSection {
@@ -168,8 +167,7 @@ export function ChatMessages({
       aria-roledescription="chat messages"
       className={cn(
         'relative size-full pt-14',
-        sections.length > 0 ? 'flex-1 overflow-y-auto' : '',
-        artifactState.isOpen && 'scrollbar-hide'
+        sections.length > 0 ? 'flex-1 overflow-y-auto scrollbar-hide' : ''
       )}
     >
       <div className="relative mx-auto w-full max-w-full md:max-w-3xl px-4">

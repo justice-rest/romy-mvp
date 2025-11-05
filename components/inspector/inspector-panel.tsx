@@ -77,7 +77,7 @@ export function InspectorPanel() {
             </TooltipButton>
           </div>
           <Separator className="my-1 bg-border/50" />
-          <div data-vaul-no-drag className="flex-1 overflow-y-auto p-4">
+          <div data-vaul-no-drag className="flex-1 overflow-y-auto scrollbar-hide p-4">
             <ArtifactContent part={part} />
           </div>
         </div>

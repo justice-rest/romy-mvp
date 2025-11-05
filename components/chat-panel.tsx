@@ -1,24 +1,25 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Textarea from 'react-textarea-autosize'
+import { useRouter } from 'next/navigation'
 
 import { UseChatHelpers } from '@ai-sdk/react'
 import { ArrowUp, ChevronDown, MessageCirclePlus, Square } from 'lucide-react'
 import { toast } from 'sonner'
 
+import { DATA_TYPE_CONFIGS } from '@/lib/config/research-types'
 import { UploadedFile } from '@/lib/types'
 import type { UIDataTypes, UIMessage, UITools } from '@/lib/types/ai'
 import { cn } from '@/lib/utils'
 
 import { useAuthCheck } from '@/hooks/use-auth-check'
 
-import { ActionButtons, ActionButtonsHandle } from './action-buttons'
 import { useArtifact } from './artifact/artifact-context'
+import { Button } from './ui/button'
+import { ActionButtons, ActionButtonsHandle } from './action-buttons'
 import { FileUploadButton } from './file-upload-button'
 import { SearchModeSelector } from './search-mode-selector'
-import { Button } from './ui/button'
 import { UploadedFileList } from './uploaded-file-list'
 
 // Constants for timing delays
@@ -69,6 +70,7 @@ export function ChatPanel({
   const [isComposing, setIsComposing] = useState(false) // Composition state
   const [enterDisabled, setEnterDisabled] = useState(false) // Disable Enter after composition ends
   const [isInputFocused, setIsInputFocused] = useState(false) // Track input focus
+  const [selectedDataTypes, setSelectedDataTypes] = useState<string[]>([])
   const { close: closeArtifact } = useArtifact()
   const { isAuthenticated } = useAuthCheck()
   const isLoading = status === 'submitted' || status === 'streaming'
@@ -142,18 +144,27 @@ export function ChatPanel({
   }
 
   return (
-    <div className="w-full bg-transparent group/form-container shrink-0">
+    <>
       {uploadedFiles.length > 0 && (
         <UploadedFileList files={uploadedFiles} onRemove={handleFileRemove} />
       )}
       <form
         onSubmit={e => {
+          if (selectedDataTypes.length > 0) {
+            const dataTypeEnhancements = selectedDataTypes
+              .map(dt => DATA_TYPE_CONFIGS.find(config => config.value === dt)?.promptEnhancement)
+              .filter(Boolean)
+              .join('\n\n')
+            
+            if (dataTypeEnhancements && typeof window !== 'undefined') {
+              sessionStorage.setItem('promptEnhancement', dataTypeEnhancements)
+            }
+          }
           handleSubmit(e)
-          // Reset focus state after submission
           setIsInputFocused(false)
           inputRef.current?.blur()
         }}
-        className="w-full max-w-2xl mx-auto relative"
+        className="max-w-3xl w-full mx-auto relative"
       >
         {/* Scroll to bottom button - only shown when showScrollToBottomButton is true */}
         {showScrollToBottomButton && messages.length > 0 && (
@@ -288,19 +299,8 @@ export function ChatPanel({
                     // Focus the input
                     inputRef.current?.focus()
                   }}
-                  onDataTypeClick={(dataType, promptEnhancement) => {
-                    // Set the data type query in the input with the prompt enhancement
-                    const enhancedQuery = `${dataType}: ${input || ''}`
-                    handleInputChange({
-                      target: { value: enhancedQuery }
-                    } as React.ChangeEvent<HTMLTextAreaElement>)
-                    // Focus the input
-                    inputRef.current?.focus()
-                    // Store the prompt enhancement for use in the API call
-                    // This will be used to modify the system prompt
-                    if (typeof window !== 'undefined') {
-                      sessionStorage.setItem('promptEnhancement', promptEnhancement)
-                    }
+                  onDataTypesChange={(dataTypes) => {
+                    setSelectedDataTypes(dataTypes)
                   }}
                 />
               </div>
@@ -334,29 +334,23 @@ export function ChatPanel({
           </div>
         </div>
 
-        {/* Action buttons for prompt suggestions - action buttons hidden but prompt samples still work */}
         {messages.length === 0 && (
           <ActionButtons
             ref={actionButtonsRef}
             onSelectPrompt={message => {
-              // Set the input value and submit
               handleInputChange({
                 target: { value: message }
               } as React.ChangeEvent<HTMLTextAreaElement>)
-              // Submit the form after a small delay to ensure the input is updated
               setTimeout(() => {
                 inputRef.current?.form?.requestSubmit()
-                // Reset focus state after action button submission
                 setIsInputFocused(false)
                 inputRef.current?.blur()
               }, INPUT_UPDATE_DELAY_MS)
             }}
             onCategoryClick={category => {
-              // Set the category in the input
               handleInputChange({
                 target: { value: category }
               } as React.ChangeEvent<HTMLTextAreaElement>)
-              // Focus the input
               inputRef.current?.focus()
             }}
             inputRef={inputRef}
@@ -364,6 +358,6 @@ export function ChatPanel({
           />
         )}
       </form>
-    </div>
+    </>
   )
 }

@@ -3,12 +3,22 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+
 import { Loader2 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+
 import { useIsMobile } from '@/hooks/use-mobile'
 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import {
@@ -74,7 +84,11 @@ const GoogleSignInButton = ({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/oauth`
+          redirectTo: `${window.location.origin}/auth/oauth`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         }
       })
       if (error) throw error
@@ -113,11 +127,13 @@ interface EmailPasswordFormProps {
 }
 
 const EmailPasswordForm = ({ mode, onSuccess }: EmailPasswordFormProps) => {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,13 +154,16 @@ const EmailPasswordForm = ({ mode, onSuccess }: EmailPasswordFormProps) => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              full_name: name
+            }
           }
         })
         if (error) throw error
-        // Show success message
+        // Show verification dialog
         setError(null)
-        onSuccess()
+        setShowVerifyDialog(true)
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -163,7 +182,24 @@ const EmailPasswordForm = ({ mode, onSuccess }: EmailPasswordFormProps) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      <form onSubmit={handleSubmit} className="space-y-4">
+      {mode === 'sign-up' && (
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-sm font-medium">
+            Name
+          </Label>
+          <Input
+            id="name"
+            type="text"
+            placeholder="Your name"
+            required
+            value={name}
+            onChange={e => setName(e.target.value)}
+            className="h-11"
+          />
+        </div>
+      )}
       <div className="space-y-2">
         <Label htmlFor="email" className="text-sm font-medium">
           Email
@@ -219,6 +255,31 @@ const EmailPasswordForm = ({ mode, onSuccess }: EmailPasswordFormProps) => {
             : 'Sign Up'}
       </Button>
     </form>
+
+    <AlertDialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Verify your email address</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <p>
+              We&apos;ve sent a verification email to <strong>{email}</strong>.
+            </p>
+            <p>
+              Please check your inbox and click the verification link to activate your account.
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button onClick={() => {
+            setShowVerifyDialog(false)
+            onSuccess()
+          }}>
+            Got it
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   )
 }
 
@@ -348,7 +409,7 @@ export function AuthModalNew({ open, onOpenChange }: AuthModalProps) {
                 : 'Get started with a new account'}
             </p>
           </DrawerHeader>
-          <div className="overflow-y-auto pt-4">
+          <div className="overflow-y-auto scrollbar-hide pt-4">
             {/* Google OAuth */}
             <div className="space-y-2 mb-4">
               <GoogleSignInButton

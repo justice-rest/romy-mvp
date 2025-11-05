@@ -17,14 +17,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { SettingsIcon } from '@/components/ui/settings'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem
 } from '@/components/ui/sidebar'
-import { SettingsIcon } from '@/components/ui/settings'
-import { ThemeSwitcher } from '@/components/theme-switcher'
+
 import { ExternalLinkItems } from '@/components/external-link-items'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 
 export function SidebarUserNav({ user }: { user: User }) {
   const router = useRouter()

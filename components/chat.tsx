@@ -16,12 +16,15 @@ import {
 } from '@/lib/types/dynamic-tools'
 import { cn } from '@/lib/utils'
 
-import { useSidebar } from '@/components/ui/sidebar'
 import { useAuthCheck } from '@/hooks/use-auth-check'
 import { useFileDropzone } from '@/hooks/use-file-dropzone'
+
+import { useSidebar } from '@/components/ui/sidebar'
+
 import { AuthModalNew } from './auth-modal-new'
 import { ChatMessages } from './chat-messages'
 import { ChatPanel } from './chat-panel'
+import { Crowd } from './crowd'
 import { DragOverlay } from './drag-overlay'
 import { ErrorModal } from './error-modal'
 import IntroductionModal from './introduction-modal'
@@ -102,10 +105,10 @@ export function Chat({
             : undefined
 
         // Get prompt enhancement from sessionStorage and clear it
-        const promptEnhancement = typeof window !== 'undefined' 
+        const promptEnhancementData = typeof window !== 'undefined' 
           ? sessionStorage.getItem('promptEnhancement') 
           : null
-        if (typeof window !== 'undefined' && promptEnhancement) {
+        if (typeof window !== 'undefined' && promptEnhancementData) {
           sessionStorage.removeItem('promptEnhancement')
         }
 
@@ -125,7 +128,7 @@ export function Chat({
               trigger === 'submit-message' &&
               messages.length === 1 &&
               savedMessages.length === 0,
-            promptEnhancement: promptEnhancement || undefined
+            promptEnhancement: promptEnhancementData || undefined
           }
         }
       }
@@ -402,128 +405,89 @@ export function Chat({
 
   return (
     <div
-      className="flex flex-col items-center h-screen bg-background text-foreground w-full overflow-x-hidden"
+      className={cn(
+        'relative flex h-full min-w-0 flex-1 flex-col',
+        messages.length === 0 ? 'items-center justify-center' : ''
+      )}
       data-testid="full-chat"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div
-        className={cn(
-          'w-full p-2 sm:p-4 relative',
-          status === 'ready' && messages.length === 0
-            ? 'flex-1 flex flex-col items-center justify-center'
-            : 'mt-20 sm:mt-16 flex flex-col'
-        )}
-      >
-        <div className="w-full max-w-[95%] sm:max-w-2xl space-y-6 p-0 mx-auto transition-all duration-300">
-          {/* Show logo/title when no messages */}
-          {status === 'ready' && messages.length === 0 && (
-            <Greeting />
-          )}
+      <ChatMessages
+        sections={sections}
+        onQuerySelect={onQuerySelect}
+        status={status}
+        chatId={chatId}
+        addToolResult={({
+          toolCallId,
+          result
+        }: {
+          toolCallId: string
+          result: any
+        }) => {
+          // Find the tool name from the message parts
+          let toolName = 'unknown'
 
-          {/* Messages */}
-          {messages.length > 0 && (
-            <ChatMessages
-              sections={sections}
-              onQuerySelect={onQuerySelect}
-              status={status}
-              chatId={chatId}
-              addToolResult={({
-                toolCallId,
-                result
-              }: {
-                toolCallId: string
-                result: any
-              }) => {
-                // Find the tool name from the message parts
-                let toolName = 'unknown'
+          // Optimize by breaking early once found
+          outerLoop: for (const message of messages) {
+            if (!message.parts) continue
 
-                // Optimize by breaking early once found
-                outerLoop: for (const message of messages) {
-                  if (!message.parts) continue
-
-                  for (const part of message.parts) {
-                    if (isToolCallPart(part) && part.toolCallId === toolCallId) {
-                      toolName = part.toolName
-                      break outerLoop
-                    } else if (
-                      isToolTypePart(part) &&
-                      part.toolCallId === toolCallId
-                    ) {
-                      toolName = part.type.substring(5) // Remove 'tool-' prefix
-                      break outerLoop
-                    } else if (
-                      isDynamicToolPart(part) &&
-                      part.toolCallId === toolCallId
-                    ) {
-                      toolName = part.toolName
-                      break outerLoop
-                    }
-                  }
-                }
-
-                addToolResult({ tool: toolName, toolCallId, output: result })
-              }}
-              scrollContainerRef={scrollContainerRef}
-              onUpdateMessage={handleUpdateAndReloadMessage}
-              reload={handleReloadFrom}
-              error={error}
-            />
-          )}
-        </div>
-
-        {/* Chat Panel - positioned differently based on messages */}
-        <div
-          className={cn(
-            'transition-all duration-200',
-            messages.length === 0
-              ? 'relative w-full max-w-2xl mx-auto'
-              : 'fixed bottom-24 z-20 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4'
-          )}
-          style={
-            messages.length > 0 && sidebarOpen && !isMobile
-              ? {
-                  left: 'calc(50% + 8rem)'
-                }
-              : undefined
+            for (const part of message.parts) {
+              if (isToolCallPart(part) && part.toolCallId === toolCallId) {
+                toolName = part.toolName
+                break outerLoop
+              } else if (
+                isToolTypePart(part) &&
+                part.toolCallId === toolCallId
+              ) {
+                toolName = part.type.substring(5) // Remove 'tool-' prefix
+                break outerLoop
+              } else if (
+                isDynamicToolPart(part) &&
+                part.toolCallId === toolCallId
+              ) {
+                toolName = part.toolName
+                break outerLoop
+              }
+            }
           }
-        >
-          <ChatPanel
-            chatId={chatId}
-            input={input}
-            handleInputChange={handleInputChange}
-            handleSubmit={onSubmit}
-            status={status}
-            messages={messages}
-            setMessages={setMessages}
-            stop={stop}
-            query={query}
-            append={(message: any) => {
-              sendMessage(message)
-            }}
-            showScrollToBottomButton={!isAtBottom}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            scrollContainerRef={scrollContainerRef}
-            onNewChat={handleNewChat}
-          />
-        </div>
 
-        {/* Backdrop gradient when form is fixed */}
-        {messages.length > 0 && (
-          <div
-            className={cn(
-              'fixed left-0 right-0 z-10 bg-gradient-to-t from-background via-background/95 to-background/80 backdrop-blur-sm pointer-events-none transition-all duration-200',
-              sidebarOpen && !isMobile && 'md:left-[16rem]'
-            )}
-            style={{
-              bottom: '0',
-              height: '120px'
-            }}
-          />
-        )}
+          addToolResult({ tool: toolName, toolCallId, output: result })
+        }}
+        scrollContainerRef={scrollContainerRef}
+        onUpdateMessage={handleUpdateAndReloadMessage}
+        reload={handleReloadFrom}
+        error={error}
+      />
+      
+      <div className={cn('w-full bg-background shrink-0', messages.length > 0 ? 'sticky bottom-0 px-2 pb-4' : 'px-6')}>
+        {messages.length === 0 && <Greeting />}
+        <ChatPanel
+          chatId={chatId}
+          input={input}
+          handleInputChange={handleInputChange}
+          handleSubmit={onSubmit}
+          status={status}
+          messages={messages}
+          setMessages={setMessages}
+          stop={stop}
+          query={query}
+          append={(message: any) => {
+            sendMessage(message)
+          }}
+          showScrollToBottomButton={!isAtBottom}
+          uploadedFiles={uploadedFiles}
+          setUploadedFiles={setUploadedFiles}
+          scrollContainerRef={scrollContainerRef}
+          onNewChat={handleNewChat}
+        />
       </div>
+
+      {messages.length === 0 && (
+        <div className="fixed left-0 right-0 bottom-0 z-0 pointer-events-none top-[60vh] sm:top-[58vh] md:top-[52vh]">
+        </div>
+      )}
       <DragOverlay visible={isDragging} />
       <AuthModalNew open={showAuthModal} onOpenChange={setShowAuthModal} />
       <ErrorModal

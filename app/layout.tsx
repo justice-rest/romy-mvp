@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter as FontSans, Be_Vietnam_Pro, Baumans } from 'next/font/google'
+import { Baumans,Be_Vietnam_Pro, Inter as FontSans } from 'next/font/google'
 
 import { Analytics } from '@vercel/analytics/next'
 

@@ -215,7 +215,7 @@ export const ActionButtons = forwardRef<ActionButtonsHandle, ActionButtonsProps>
         {/* Prompt samples */}
         <div
           className={cn(
-            'absolute inset-0 py-1 space-y-1 overflow-y-auto transition-opacity duration-300',
+            'absolute inset-0 py-1 space-y-1 overflow-y-auto scrollbar-hide transition-opacity duration-300',
             !activeCategory ? 'opacity-0 pointer-events-none' : 'opacity-100'
           )}
         >

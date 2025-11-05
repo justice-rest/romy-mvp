@@ -19,8 +19,8 @@ import {
 
 import { ChatHistorySection } from './sidebar/chat-history-section'
 import { ChatHistorySkeleton } from './sidebar/chat-history-skeleton'
-import { SidebarUserNav } from './sidebar-user-nav'
 import { BetaBadge } from './beta-badge'
+import { SidebarUserNav } from './sidebar-user-nav'
 
 export default async function AppSidebar() {
   const supabase = await createClient()
@@ -48,7 +48,7 @@ export default async function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
           <Suspense fallback={<ChatHistorySkeleton />}>
             <ChatHistorySection />
           </Suspense>

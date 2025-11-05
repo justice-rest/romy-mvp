@@ -312,7 +312,7 @@ export const SearchResultsImageSection: React.FC<
                 </div>
               </div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-auto">
+            <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-auto scrollbar-hide">
               <DialogHeader>
                 <DialogTitle>Search Images</DialogTitle>
                 <DialogDescription className="text-sm">

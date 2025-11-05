@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useMemo,useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
-import { Button } from '@/components/ui/button';
+
 import { ArrowLeft } from 'lucide-react';
+import { motion } from 'motion/react';
+
+import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   const gridRef = useRef<HTMLDivElement>(null);

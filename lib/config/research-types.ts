@@ -1,14 +1,13 @@
 import {
   GitCompareIcon,
+  HeartCheckIcon,
   HelpCircleIcon,
+  Home01Icon,
+  MoneySend01Icon,
   News01Icon,
   Note01Icon,
   Search01Icon,
-  Home01Icon,
-  Store01Icon,
-  HeartCheckIcon,
-  MoneySend01Icon
-} from '@hugeicons/core-free-icons'
+  Store01Icon} from '@hugeicons/core-free-icons'
 
 export type ResearchType =
   | 'research'

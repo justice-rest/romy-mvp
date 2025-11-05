@@ -79,7 +79,7 @@ export function DynamicToolDisplay({ part }: DynamicToolDisplayProps) {
         part.state === 'output-error') && (
         <div className="mb-2">
           <div className="text-xs text-muted-foreground mb-1">Input:</div>
-          <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+          <pre className="text-xs bg-muted p-2 rounded overflow-auto scrollbar-hide max-h-40">
             <code>{JSON.stringify(part.input, null, 2)}</code>
           </pre>
         </div>
@@ -89,7 +89,7 @@ export function DynamicToolDisplay({ part }: DynamicToolDisplayProps) {
       {part.state === 'output-available' && (
         <div className="mb-2">
           <div className="text-xs text-muted-foreground mb-1">Output:</div>
-          <pre className="text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+          <pre className="text-xs bg-muted p-2 rounded overflow-auto scrollbar-hide max-h-40">
             <code>{JSON.stringify(part.output, null, 2)}</code>
           </pre>
         </div>

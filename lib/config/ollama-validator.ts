@@ -1,6 +1,7 @@
-import { loadModelsConfig } from './load-models-config'
 import { OllamaClient } from '@/lib/ollama/client'
 import { Model } from '@/lib/types/models'
+
+import { loadModelsConfig } from './load-models-config'
 
 /**
  * Memory cache for validated Ollama models

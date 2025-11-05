@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo, useRef, useEffect } from 'react'
+import { memo, useEffect,useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { User } from '@supabase/supabase-js'
@@ -20,11 +20,11 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
+import { SettingsIcon, type SettingsIconHandle } from './ui/settings'
 import { AuthModalNew } from './auth-modal-new'
 import { ExternalLinkItems } from './external-link-items'
-import { SettingsIcon, type SettingsIconHandle } from './ui/settings'
-import { ThemeSwitcher } from './theme-switcher'
 import { ThemeMenuItems } from './theme-menu-items'
+import { ThemeSwitcher } from './theme-switcher'
 
 // Navigation Menu Component - contains all the general navigation items
 const NavigationMenu = memo(() => {
@@ -189,5 +189,5 @@ const UserProfile = memo(({ user }: { user: User | null }) => {
 
 UserProfile.displayName = 'UserProfile'
 
-export { UserProfile, NavigationMenu }
+export { NavigationMenu,UserProfile }
 

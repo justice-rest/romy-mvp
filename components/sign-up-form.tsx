@@ -6,6 +6,14 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils/index'
 
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -23,11 +31,13 @@ export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<'div'>) {
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [repeatPassword, setRepeatPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showVerifyDialog, setShowVerifyDialog] = useState(false)
   const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -47,11 +57,14 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: name
+          }
         }
       })
       if (error) throw error
-      router.push('/auth/sign-up-success')
+      setShowVerifyDialog(true)
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -77,6 +90,17 @@ export function SignUpForm({
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Your name"
+                  required
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                />
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -133,6 +157,30 @@ export function SignUpForm({
           &larr; Back to Home
         </Link>
       </div>
+
+      <AlertDialog open={showVerifyDialog} onOpenChange={setShowVerifyDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verify your email address</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                We&apos;ve sent a verification email to <strong>{email}</strong>.
+              </p>
+              <p>
+                Please check your inbox and click the verification link to activate your account.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button onClick={() => {
+              setShowVerifyDialog(false)
+              router.push('/')
+            }}>
+              Got it
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

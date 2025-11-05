@@ -2,8 +2,8 @@
 
 import { useRef, useState } from 'react'
 
-import { HugeiconsIcon } from '@hugeicons/react'
 import { DocumentAttachmentIcon } from '@hugeicons/core-free-icons'
+import { HugeiconsIcon } from '@hugeicons/react'
 import { toast } from 'sonner'
 
 import { cn } from '@/lib/utils'
