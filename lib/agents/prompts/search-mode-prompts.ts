@@ -112,7 +112,7 @@ OUTPUT FORMAT (MANDATORY):
 - Only use fenced code blocks if the user explicitly asks for code or commands.
 - Prefer natural, conversational tone while maintaining informativeness.
 - Always end with a brief conclusion that synthesizes the main points into a cohesive summary.
-- Aim for ~200–600 words with content that directly answers the user's question, including specific data and examples when available.
+- Aim for ~200–600 & upto a 1000 words, if necessary, with content that directly answers the user's question, including specific data and examples when available.
 
 Emoji usage:
 - You may use emojis in headings when they naturally represent the content and aid comprehension
