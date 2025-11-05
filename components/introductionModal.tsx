@@ -1,7 +1,8 @@
 'use client'
 
-import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+
+import { motion } from 'framer-motion'
 
 import { useCurrentUserName } from '@/hooks/use-current-user-name'
 

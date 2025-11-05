@@ -25,6 +25,7 @@ import { perfLog, perfTime } from '../utils/perf-logging'
 import { filterReasoningParts } from './helpers/filter-reasoning-parts'
 import { persistStreamResults } from './helpers/persist-stream-results'
 import { prepareMessages } from './helpers/prepare-messages'
+import { processFileParts } from './helpers/process-file-parts'
 import { streamRelatedQuestions } from './helpers/stream-related-questions'
 import type { StreamContext } from './helpers/types'
 import { BaseStreamConfig } from './types'
@@ -126,6 +127,11 @@ export async function createChatStreamResponse(
         const messagesToModel = await prepareMessages(context, message)
         perfTime('prepareMessages completed (stream)', prepareStart)
 
+        // Process file parts (XLSX/CSV) to extract content
+        const processFileStart = performance.now()
+        const messagesWithProcessedFiles = await processFileParts(messagesToModel)
+        perfTime('processFileParts completed', processFileStart)
+
         // Get the researcher agent with parent trace ID, search mode, and model type
         const researchAgent = researcher({
           model: context.modelId,
@@ -140,7 +146,7 @@ export async function createChatStreamResponse(
 
         // Filter out reasoning parts from messages before converting to model messages
         // OpenAI API requires reasoning messages to be followed by assistant messages
-        const filteredMessages = filterReasoningParts(messagesToModel)
+        const filteredMessages = filterReasoningParts(messagesWithProcessedFiles)
 
         // Convert to model messages and apply context window management
         let modelMessages = convertToModelMessages(filteredMessages)
