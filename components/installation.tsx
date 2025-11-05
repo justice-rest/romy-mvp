@@ -34,7 +34,7 @@ export function InstallationModal({ open, onOpenChange }: InstallationModalProps
               Are you a NGO based in the US?
             </h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Our Co-Founder will come to your office or house for a hands-on
+              Our Founders will come to your office or house for a hands-on
               installation session / demo!
             </p>
             <Button
