@@ -20,7 +20,7 @@ export function InstallationModal({ open, onOpenChange }: InstallationModalProps
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">
-            Arlan Installation
+            Founders, with You!
           </DialogTitle>
           <DialogDescription className="text-center">
             Let us help you get started with Rōmy
