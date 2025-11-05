@@ -1,7 +1,7 @@
 'use client'
 
-import React from 'react'
 import Link from 'next/link'
+import React, { useState } from 'react'
 
 import { User } from '@supabase/supabase-js'
 import { Plus } from 'lucide-react'
@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
+import { InstallationModal } from './installation'
 import { Button } from './ui/button'
 import { NavigationMenu, UserProfile } from './user-profile'
 
@@ -20,6 +21,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ user }) => {
   const { open } = useSidebar()
+  const [isInstallationModalOpen, setIsInstallationModalOpen] = useState(false)
 
   // Don't render header at all for authenticated users
   if (user) {
@@ -34,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
           'bg-background'
         )}
       >
-        {/* Left side - New button (only for unauthenticated users) */}
+        {/* Left side - New button and Installation button (only for unauthenticated users) */}
         <div className="flex items-center gap-3">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -56,6 +58,15 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
               Start a new chat
             </TooltipContent>
           </Tooltip>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsInstallationModalOpen(true)}
+            className="rounded-lg hover:bg-accent/50 transition-all hover:scale-105 pointer-events-auto"
+          >
+            Founders
+          </Button>
         </div>
 
         {/* Right side - Navigation Menu for unauthenticated users */}
@@ -64,6 +75,10 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
           <UserProfile user={user} />
         </div>
       </header>
+      <InstallationModal
+        open={isInstallationModalOpen}
+        onOpenChange={setIsInstallationModalOpen}
+      />
     </TooltipProvider>
   )
 }
