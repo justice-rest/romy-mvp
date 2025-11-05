@@ -150,13 +150,16 @@ const EmailPasswordForm = ({ mode, onSuccess }: EmailPasswordFormProps) => {
           return
         }
 
+        const avatarUrl = `https://api.dicebear.com/9.x/dylan/svg?seed=${encodeURIComponent(email)}&backgroundColor=00A5E4`
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
-              full_name: name
+              full_name: name,
+              avatar_url: avatarUrl
             }
           }
         })
