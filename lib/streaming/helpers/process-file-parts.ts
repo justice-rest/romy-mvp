@@ -5,8 +5,8 @@ import { processFile } from '@/lib/utils/file-processor'
 /**
  * Process file parts in messages to extract content from XLSX/CSV files.
  * For supported file types (XLSX, CSV), this helper fetches the file,
- * extracts its content as markdown tables, and adds it as a text part
- * following the file part so the AI can analyze the data.
+ * extracts its content as markdown tables, and replaces the file part
+ * with a text part so the AI can analyze the data.
  *
  * @param messages - Array of UI messages from the chat history
  * @returns Messages with processed file content
@@ -20,8 +20,6 @@ export async function processFileParts(
         const newParts: any[] = []
 
         for (const part of msg.parts) {
-          newParts.push(part)
-
           if (part.type === 'file') {
             const filePart = part as {
               type: 'file'
@@ -37,14 +35,22 @@ export async function processFileParts(
               )
 
               if (content) {
+                // Replace file part with extracted text content for XLSX/CSV
                 newParts.push({
                   type: 'text' as const,
-                  text: `\n\nContent from file "${filePart.filename || 'uploaded file'}":\n\n${content}`
+                  text: `Content from file "${filePart.filename || 'uploaded file'}":\n\n${content}`
                 })
+              } else {
+                // Keep the original file part for unsupported types (images, PDFs)
+                newParts.push(part)
               }
             } catch (error) {
               console.error('Error processing file part:', error)
+              // On error, keep the original file part
+              newParts.push(part)
             }
+          } else {
+            newParts.push(part)
           }
         }
 
