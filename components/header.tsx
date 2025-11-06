@@ -28,7 +28,8 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
       <header
         className={cn(
           'fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-3 transition-colors duration-200',
-          'bg-background'
+          'bg-background',
+          user && !open && 'pl-16 md:pl-3'
         )}
       >
         {/* Left side */}
