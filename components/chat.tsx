@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
@@ -209,6 +209,26 @@ export function Chat({
   const setInputDirectly = (value: string) => {
     setInput(value)
   }
+
+  const handleHighlight = useCallback((text: string) => {
+    const quotedText = `> ${text.replace(/\n/g, '\n> ')}\n\n`
+    setInput(prev => prev + quotedText)
+
+    // Focus the input after adding the quote
+    setTimeout(() => {
+      const inputElement = document.querySelector(
+        'textarea[placeholder*="Ask"]'
+      ) as HTMLTextAreaElement
+      if (inputElement) {
+        inputElement.focus()
+        // Move cursor to end
+        inputElement.setSelectionRange(
+          inputElement.value.length,
+          inputElement.value.length
+        )
+      }
+    }, 100)
+  }, [])
 
   // Convert messages array to sections array
   const sections = useMemo<ChatSection[]>(() => {
@@ -421,6 +441,7 @@ export function Chat({
       <ChatMessages
         sections={sections}
         onQuerySelect={onQuerySelect}
+        onHighlight={handleHighlight}
         status={status}
         chatId={chatId}
         addToolResult={({

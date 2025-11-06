@@ -24,6 +24,7 @@ interface ChatSection {
 interface ChatMessagesProps {
   sections: ChatSection[] // Changed from messages to sections
   onQuerySelect: (query: string) => void
+  onHighlight?: (text: string) => void
   status: UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>['status']
   chatId?: string
   addToolResult?: (params: { toolCallId: string; result: any }) => void
@@ -37,6 +38,7 @@ interface ChatMessagesProps {
 export function ChatMessages({
   sections,
   onQuerySelect,
+  onHighlight,
   status,
   chatId,
   addToolResult,
@@ -192,6 +194,7 @@ export function ChatMessages({
                 }
                 onOpenChange={handleOpenChange}
                 onQuerySelect={onQuerySelect}
+                onHighlight={onHighlight}
                 chatId={chatId}
                 status={status}
                 addToolResult={addToolResult}
@@ -218,6 +221,7 @@ export function ChatMessages({
                     }
                     onOpenChange={handleOpenChange}
                     onQuerySelect={onQuerySelect}
+                    onHighlight={onHighlight}
                     chatId={chatId}
                     status={status}
                     addToolResult={addToolResult}

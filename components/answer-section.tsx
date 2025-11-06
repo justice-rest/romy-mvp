@@ -21,6 +21,7 @@ export type AnswerSectionProps = {
   content: string
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  onHighlight?: (text: string) => void
   chatId?: string
   showActions?: boolean
   messageId: string
@@ -38,6 +39,7 @@ export function AnswerSection({
   content,
   isOpen,
   onOpenChange,
+  onHighlight,
   chatId,
   showActions = true, // Default to true for backward compatibility
   messageId,
@@ -67,7 +69,11 @@ export function AnswerSection({
     >
       {content && (
         <div className="flex flex-col gap-1">
-          <MarkdownMessage message={content} citationMaps={citationMaps} />
+          <MarkdownMessage
+            message={content}
+            citationMaps={citationMaps}
+            onHighlight={onHighlight}
+          />
           <MessageActions
             message={content} // Provide original message; copy path remaps citations
             messageId={messageId}

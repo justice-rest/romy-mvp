@@ -12,17 +12,20 @@ import { processCitations } from '@/lib/utils/citation'
 
 import { CitationProvider } from './citation-context'
 import { Citing } from './custom-link'
+import { ChatTextHighlighter } from './ui/chat-text-highlighter'
 
 import 'katex/dist/katex.min.css'
 
 export function MarkdownMessage({
   message,
   className,
-  citationMaps
+  citationMaps,
+  onHighlight
 }: {
   message: string
   className?: string
   citationMaps?: Record<string, Record<number, SearchResultItem>>
+  onHighlight?: (text: string) => void
 }) {
   // Process citations to replace [number](#toolCallId) with [number](actual-url)
   const processedMessage = processCitations(message || '', citationMaps || {})
@@ -34,23 +37,25 @@ export function MarkdownMessage({
 
   return (
     <CitationProvider citationMaps={citationMaps}>
-      <div
-        className={cn(
-          'prose-sm prose-neutral prose-a:text-accent-foreground/50',
-          className
-        )}
-      >
-        <Streamdown
-          rehypePlugins={[
-            [rehypeExternalLinks, { target: '_blank' }],
-            [rehypeKatex]
-          ]}
-          remarkPlugins={[remarkGfm, remarkMath]}
-          components={customComponents}
+      <ChatTextHighlighter onHighlight={onHighlight}>
+        <div
+          className={cn(
+            'prose-sm prose-neutral prose-a:text-accent-foreground/50',
+            className
+          )}
         >
-          {processedMessage}
-        </Streamdown>
-      </div>
+          <Streamdown
+            rehypePlugins={[
+              [rehypeExternalLinks, { target: '_blank' }],
+              [rehypeKatex]
+            ]}
+            remarkPlugins={[remarkGfm, remarkMath]}
+            components={customComponents}
+          >
+            {processedMessage}
+          </Streamdown>
+        </div>
+      </ChatTextHighlighter>
     </CitationProvider>
   )
 }

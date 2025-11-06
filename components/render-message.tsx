@@ -25,6 +25,7 @@ interface RenderMessageProps {
   getIsOpen: (id: string, partType?: string, hasNextPart?: boolean) => boolean
   onOpenChange: (id: string, open: boolean) => void
   onQuerySelect: (query: string) => void
+  onHighlight?: (text: string) => void
   chatId?: string
   status?: UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>['status']
   addToolResult?: (params: { toolCallId: string; result: any }) => void
@@ -40,6 +41,7 @@ export function RenderMessage({
   getIsOpen,
   onOpenChange,
   onQuerySelect,
+  onHighlight,
   chatId,
   status,
   addToolResult,
@@ -134,6 +136,7 @@ export function RenderMessage({
             index < (message.parts?.length ?? 0) - 1
           )}
           onOpenChange={open => onOpenChange(messageId, open)}
+          onHighlight={onHighlight}
           chatId={chatId}
           showActions={shouldShowActions}
           messageId={messageId}
