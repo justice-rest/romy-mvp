@@ -206,6 +206,10 @@ export function Chat({
     setInput(e.target.value)
   }
 
+  const setInputDirectly = (value: string) => {
+    setInput(value)
+  }
+
   // Convert messages array to sections array
   const sections = useMemo<ChatSection[]>(() => {
     const result: ChatSection[] = []
@@ -467,6 +471,7 @@ export function Chat({
           chatId={chatId}
           input={input}
           handleInputChange={handleInputChange}
+          setInput={setInputDirectly}
           handleSubmit={onSubmit}
           status={status}
           messages={messages}

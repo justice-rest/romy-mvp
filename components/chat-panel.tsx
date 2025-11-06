@@ -21,6 +21,8 @@ import { ActionButtons, ActionButtonsHandle } from './action-buttons'
 import { FileUploadButton } from './file-upload-button'
 import { SearchModeSelector } from './search-mode-selector'
 import { UploadedFileList } from './uploaded-file-list'
+import { AudioLinesIcon, AudioLinesIconHandle } from './ui/audio-lines'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 // Constants for timing delays
 const INPUT_UPDATE_DELAY_MS = 10 // Delay to ensure input value is updated before form submission
@@ -29,6 +31,7 @@ interface ChatPanelProps {
   chatId: string
   input: string
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void
+  setInput: (value: string) => void
   handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void
   status: UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>['status']
   messages: UIMessage[]
@@ -50,6 +53,7 @@ export function ChatPanel({
   chatId,
   input,
   handleInputChange,
+  setInput,
   handleSubmit,
   status,
   messages,
@@ -74,6 +78,9 @@ export function ChatPanel({
   const { close: closeArtifact } = useArtifact()
   const { isAuthenticated } = useAuthCheck()
   const isLoading = status === 'submitted' || status === 'streaming'
+  const [isRecording, setIsRecording] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioLinesRef = useRef<AudioLinesIconHandle>(null)
 
   const handleCompositionStart = () => setIsComposing(true)
 
@@ -132,6 +139,146 @@ export function ChatPanel({
     },
     [setUploadedFiles]
   )
+
+  const cleanupMediaRecorder = useCallback(() => {
+    if (mediaRecorderRef.current) {
+      const recorder = mediaRecorderRef.current
+      if (recorder.state !== 'inactive') {
+        recorder.stop()
+      }
+      recorder.stream.getTracks().forEach(track => track.stop())
+      mediaRecorderRef.current = null
+    }
+    setIsRecording(false)
+  }, [])
+
+  const handleRecord = useCallback(async () => {
+    if (isRecording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop()
+      cleanupMediaRecorder()
+    } else {
+      try {
+        if (!isAuthenticated) {
+          toast.error('Please sign in to use voice input.')
+          return
+        }
+
+        if (typeof window === 'undefined') {
+          toast.error('Voice recording is only available in the browser.')
+          return
+        }
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+          toast.error('Voice recording is not supported in this browser.')
+          return
+        }
+
+        try {
+          const permApi: any = (navigator as any).permissions
+          if (permApi?.query) {
+            const status = await permApi.query({ name: 'microphone' as any })
+            if (status?.state === 'denied') {
+              toast.error('Microphone access is denied. Enable it in your browser settings.')
+              return
+            }
+          }
+        } catch {
+          // Ignore permissions API errors
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+        const candidateMimeTypes = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4;codecs=mp4a.40.2',
+          'audio/mp4',
+          'audio/ogg;codecs=opus',
+          'audio/mpeg'
+        ]
+        const isTypeSupported = (type: string) =>
+          typeof MediaRecorder !== 'undefined' && (MediaRecorder as any).isTypeSupported?.(type)
+        const selectedMimeType = candidateMimeTypes.find((t) => isTypeSupported(t))
+
+        let recorder: MediaRecorder
+        try {
+          recorder = selectedMimeType
+            ? new MediaRecorder(stream, { mimeType: selectedMimeType })
+            : new MediaRecorder(stream)
+        } catch (e) {
+          recorder = new MediaRecorder(stream)
+        }
+        mediaRecorderRef.current = recorder
+
+        recorder.addEventListener('dataavailable', async (event) => {
+          if (event.data.size > 0) {
+            const audioBlob = event.data
+
+            try {
+              const formData = new FormData()
+              const extension = (() => {
+                const type = (audioBlob?.type || '').toLowerCase()
+                if (type.includes('mp4')) return 'mp4'
+                if (type.includes('ogg')) return 'ogg'
+                if (type.includes('mpeg')) return 'mp3'
+                return 'webm'
+              })()
+              formData.append('audio', audioBlob, `recording.${extension}`)
+              const response = await fetch('/api/transcribe', {
+                method: 'POST',
+                body: formData
+              })
+
+              if (!response.ok) {
+                throw new Error(`Transcription failed: ${response.statusText}`)
+              }
+
+              const data = await response.json()
+
+              if (data.text) {
+                setInput(data.text)
+              } else {
+                console.error('Transcription response did not contain text:', data)
+              }
+            } catch (error) {
+              console.error('Error during transcription request:', error)
+              toast.error('Failed to transcribe audio. Please try again.')
+            } finally {
+              cleanupMediaRecorder()
+            }
+          }
+        })
+
+        recorder.addEventListener('error', (e) => {
+          console.error('MediaRecorder error:', e)
+          toast.error('Recording failed. Please try again or switch browser.')
+          cleanupMediaRecorder()
+        })
+
+        recorder.addEventListener('stop', () => {
+          stream.getTracks().forEach((track) => track.stop())
+        })
+
+        recorder.start()
+        setIsRecording(true)
+      } catch (error) {
+        console.error('Error accessing microphone:', error)
+        toast.error('Could not access microphone. Please allow mic permission.')
+        setIsRecording(false)
+      }
+    }
+  }, [isRecording, cleanupMediaRecorder, setInput, isAuthenticated])
+
+  useEffect(() => {
+    if (audioLinesRef.current) {
+      if (isRecording) {
+        audioLinesRef.current.startAnimation()
+      } else {
+        audioLinesRef.current.stopAnimation()
+      }
+    }
+  }, [isRecording])
+
   // Scroll to the bottom of the container
   const handleScrollToBottom = () => {
     const scrollContainer = scrollContainerRef.current
@@ -317,18 +464,41 @@ export function ChatPanel({
                     <MessageCirclePlus className="size-4 group-hover:rotate-12 transition-all" />
                   </Button>
                 )}
-                <Button
-                  type={isLoading ? 'button' : 'submit'}
-                  size={'icon'}
-                  className={cn(
-                    isLoading && 'animate-pulse',
-                    'rounded-full size-8 shadow-none'
-                  )}
-                  disabled={input.length === 0 && !isLoading}
-                  onClick={isLoading ? stop : undefined}
-                >
-                  {isLoading ? <Square size={16} /> : <ArrowUp size={16} />}
-                </Button>
+                {input.length === 0 && !isLoading ? (
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant={isRecording ? 'destructive' : 'default'}
+                        className={cn('rounded-full size-8 transition-colors duration-200')}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleRecord()
+                        }}
+                        type="button"
+                      >
+                        <AudioLinesIcon ref={audioLinesRef} size={16} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" sideOffset={6}>
+                      {isRecording ? 'Stop Recording' : 'Voice Input'}
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Button
+                    type={isLoading ? 'button' : 'submit'}
+                    size={'icon'}
+                    className={cn(
+                      isLoading && 'animate-pulse',
+                      'rounded-full size-8 shadow-none'
+                    )}
+                    disabled={input.length === 0 && !isLoading}
+                    onClick={isLoading ? stop : undefined}
+                  >
+                    {isLoading ? <Square size={16} /> : <ArrowUp size={16} />}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
