@@ -30,9 +30,15 @@ export interface RelatedQuestionsData {
   questions?: Array<{ question: string }>
 }
 
+export interface ActionItemsData {
+  status: 'loading' | 'streaming' | 'success' | 'error'
+  items?: Array<{ action: string }>
+}
+
 export type UIDataTypes = {
   sources?: any[]
   relatedQuestions?: RelatedQuestionsData
+  actionItems?: ActionItemsData
 }
 
 // Data part types for DataSection
@@ -42,7 +48,13 @@ export type DataRelatedQuestionsPart = {
   data: RelatedQuestionsData
 }
 
-export type DataPart = DataRelatedQuestionsPart
+export type DataActionItemsPart = {
+  type: 'data-actionItems'
+  id?: string
+  data: ActionItemsData
+}
+
+export type DataPart = DataRelatedQuestionsPart | DataActionItemsPart
 
 // Create todo tools instance for type inference
 const todoTools = createTodoTools()

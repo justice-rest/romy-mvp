@@ -1,44 +1,44 @@
 import { type ModelMessage, streamObject } from 'ai'
 
 import { getRelatedQuestionsModel } from '../config/model-types'
-import { relatedQuestionSchema } from '../schema/related'
+import { actionItemSchema } from '../schema/related'
 import { getModel } from '../utils/registry'
 import { isTracingEnabled } from '../utils/telemetry'
 
-import { RELATED_QUESTIONS_PROMPT } from './prompts/related-questions-prompt'
+import { ACTION_ITEMS_PROMPT } from './prompts/action-items-prompt'
 
-export function createRelatedQuestionsStream(
+export function createActionItemsStream(
   messages: ModelMessage[],
   abortSignal?: AbortSignal,
   parentTraceId?: string
 ) {
-  // Use the related questions model configuration from JSON
+  // Use the same model configuration as related questions
   const relatedModel = getRelatedQuestionsModel()
   const modelId = `${relatedModel.providerId}:${relatedModel.id}`
 
   return streamObject({
     model: getModel(modelId),
     output: 'array',
-    schema: relatedQuestionSchema,
-    schemaName: 'RelatedQuestion',
+    schema: actionItemSchema,
+    schemaName: 'ActionItem',
     schemaDescription:
-      'Generate a concise follow-up question (max 10-12 words)',
-    system: RELATED_QUESTIONS_PROMPT,
+      'Generate a concise actionable next step (max 10-12 words)',
+    system: ACTION_ITEMS_PROMPT,
     messages: [
       ...messages,
       {
         role: 'user',
         content:
-          'Based on the conversation history and search results, generate 3 unique follow-up questions that would help the user explore different aspects of the topic. Focus on questions that dig deeper into specific findings or explore related areas not yet covered. Should be related to NGOs, fundraising, and donor intelligence.'
+          'Based on the conversation history and search results, generate 3 unique actionable next steps that would help the user move forward. Focus on practical actions they can take based on what was discussed.'
       }
     ],
     abortSignal,
     experimental_telemetry: {
       isEnabled: isTracingEnabled(),
-      functionId: 'related-questions',
+      functionId: 'action-items',
       metadata: {
         modelId,
-        agentType: 'related-questions-generator',
+        agentType: 'action-items-generator',
         messageCount: messages.length,
         ...(parentTraceId && {
           langfuseTraceId: parentTraceId,

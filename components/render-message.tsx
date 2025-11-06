@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import { UseChatHelpers } from '@ai-sdk/react'
 
 import type { SearchResultItem } from '@/lib/types'
@@ -14,6 +16,8 @@ import { DynamicToolDisplay } from './dynamic-tool-display'
 import ResearchProcessSection from './research-process-section'
 import { UserFileSection } from './user-file-section'
 import { UserTextSection } from './user-text-section'
+
+type SuggestionDisplayMode = 'related' | 'actions' | 'both'
 
 interface RenderMessageProps {
   message: UIMessage
@@ -44,6 +48,13 @@ export function RenderMessage({
   isLatestMessage = false,
   citationMaps = {}
 }: RenderMessageProps) {
+  const [suggestionMode, setSuggestionMode] =
+    useState<SuggestionDisplayMode>('both')
+
+  const handleSuggestionModeChange = (mode: SuggestionDisplayMode) => {
+    setSuggestionMode(mode)
+  }
+
   // Use provided citation maps (from all messages)
   if (message.role === 'user') {
     return (
@@ -94,6 +105,7 @@ export function RenderMessage({
         onQuerySelect={onQuerySelect}
         status={status}
         addToolResult={addToolResult}
+        suggestionMode={suggestionMode}
       />
     )
     buffer = []
@@ -129,6 +141,7 @@ export function RenderMessage({
           reload={reload}
           status={status}
           citationMaps={citationMaps}
+          onSuggestionModeChange={handleSuggestionModeChange}
         />
       )
     } else if (

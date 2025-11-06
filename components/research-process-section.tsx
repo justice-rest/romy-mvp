@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import type { ReasoningPart } from '@ai-sdk/provider-utils'
 import { UseChatHelpers } from '@ai-sdk/react'
@@ -53,6 +53,8 @@ function isDataPart(part: MessagePart): part is DataPart {
   return part.type?.startsWith?.('data-') ?? false
 }
 
+type SuggestionDisplayMode = 'related' | 'actions' | 'both'
+
 type Props = {
   message: UIMessage
   messageId: string
@@ -62,6 +64,7 @@ type Props = {
   status?: UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>['status']
   addToolResult?: (params: { toolCallId: string; result: any }) => void
   parts?: MessagePart[]
+  suggestionMode?: SuggestionDisplayMode
 }
 
 /**
@@ -241,10 +244,37 @@ function RenderPart({
   }
 
   if (isDataPart(part)) {
-    return <DataSection part={part} onQuerySelect={onQuerySelect} />
+    return null
   }
 
   return null
+}
+
+function shouldShowPart(
+  part: MessagePart,
+  suggestionMode?: SuggestionDisplayMode
+): boolean {
+  if (!isDataPart(part)) return true
+
+  if (!suggestionMode || suggestionMode === 'both') return true
+
+  if (part.type === 'data-actionItems' && suggestionMode === 'actions')
+    return true
+  if (
+    part.type === 'data-relatedQuestions' &&
+    suggestionMode === 'related'
+  )
+    return true
+
+  if (part.type === 'data-actionItems' && suggestionMode === 'related')
+    return false
+  if (
+    part.type === 'data-relatedQuestions' &&
+    suggestionMode === 'actions'
+  )
+    return false
+
+  return true
 }
 
 /**
@@ -291,12 +321,16 @@ export function ResearchProcessSection({
   onQuerySelect,
   status,
   addToolResult,
-  parts: partsOverride
+  parts: partsOverride,
+  suggestionMode
 }: Props) {
   const allParts = (partsOverride ?? (message.parts || [])) as MessagePart[]
 
-  // Filter out empty reasoning parts to avoid incorrect grouping
-  const filteredParts = allParts.filter(p => !(isReasoningPart(p) && !p.text))
+  // Filter out empty reasoning parts and parts based on suggestion mode
+  const filteredParts = allParts.filter(
+    p =>
+      !(isReasoningPart(p) && !p.text) && shouldShowPart(p, suggestionMode)
+  )
 
   const segments = partsOverride ? [filteredParts] : splitByText(filteredParts)
 
@@ -310,52 +344,84 @@ export function ResearchProcessSection({
     message.parts as MessagePart[] | undefined
   )
 
-  if (segments.length === 0 || segments.every(seg => seg.length === 0))
-    return null
+  // Separate data parts from other parts
+  const dataParts = filteredParts.filter(isDataPart)
+  const nonDataParts = filteredParts.filter(p => !isDataPart(p))
+
+  // Split non-data parts into segments for rendering
+  const nonDataSegments = splitByText(nonDataParts)
+
+  const hasNonDataContent =
+    nonDataSegments.length > 0 &&
+    !nonDataSegments.every(seg => seg.length === 0)
 
   return (
-    <div className="space-y-2">
-      {segments.map((seg, sidx) => {
-        const groups = groupConsecutiveParts(seg)
-        const isSingle = groups.length === 1 && groups[0].length === 1
-        const containerClass = cn(!isSingle && 'rounded-lg border bg-card')
+    <>
+      {hasNonDataContent && (
+        <div className="space-y-2">
+          {nonDataSegments.map((seg, sidx) => {
+            const groups = groupConsecutiveParts(seg)
+            const isSingle = groups.length === 1 && groups[0].length === 1
+            const containerClass = cn(!isSingle && 'rounded-lg border bg-card')
 
-        return (
-          <div key={`${messageId}-seg-${sidx}`} className={containerClass}>
-            {groups.map((grp, gidx) => (
-              <div key={`${messageId}-grp-${sidx}-${gidx}`}>
-                {grp.map((part, pidx) => {
-                  const partId = isToolPart(part)
-                    ? part.toolCallId
-                    : `${messageId}-${part.type}-${sidx}-${gidx}-${pidx}`
+            return (
+              <div key={`${messageId}-seg-${sidx}`} className={containerClass}>
+                {groups.map((grp, gidx) => (
+                  <div key={`${messageId}-grp-${sidx}-${gidx}`}>
+                    {grp.map((part, pidx) => {
+                      const partId = isToolPart(part)
+                        ? part.toolCallId
+                        : `${messageId}-${part.type}-${sidx}-${gidx}-${pidx}`
 
-                  return (
-                    <RenderPart
-                      key={partId}
-                      part={part}
-                      partId={partId}
-                      hasNext={pidx < grp.length - 1}
-                      hasSubsequentContent={hasSubsequentContent(sidx)}
-                      isSingle={isSingle}
-                      isFirstGroup={gidx === 0}
-                      isLastGroup={gidx === groups.length - 1}
-                      groupLength={grp.length}
-                      partIndex={pidx}
-                      getIsOpen={getIsOpen}
-                      openSectionId={openSectionId}
-                      handleAccordionChange={handleAccordionChange}
-                      status={status}
-                      addToolResult={addToolResult}
-                      onQuerySelect={onQuerySelect}
-                    />
-                  )
-                })}
+                      return (
+                        <RenderPart
+                          key={partId}
+                          part={part}
+                          partId={partId}
+                          hasNext={pidx < grp.length - 1}
+                          hasSubsequentContent={hasSubsequentContent(sidx)}
+                          isSingle={isSingle}
+                          isFirstGroup={gidx === 0}
+                          isLastGroup={gidx === groups.length - 1}
+                          groupLength={grp.length}
+                          partIndex={pidx}
+                          getIsOpen={getIsOpen}
+                          openSectionId={openSectionId}
+                          handleAccordionChange={handleAccordionChange}
+                          status={status}
+                          addToolResult={addToolResult}
+                          onQuerySelect={onQuerySelect}
+                        />
+                      )
+                    })}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )
-      })}
-    </div>
+            )
+          })}
+        </div>
+      )}
+      {dataParts.length > 0 && (
+        <div className="space-y-0">
+          {dataParts.map((part, idx) => (
+            <React.Fragment key={`${messageId}-data-${idx}`}>
+              <DataSection
+                part={part}
+                onQuerySelect={onQuerySelect}
+                suggestionMode={suggestionMode}
+              />
+              {suggestionMode === 'both' &&
+                idx === 0 &&
+                dataParts.length > 1 && (
+                  <div className="py-3">
+                    <div className="squiggle-separator h-[3px] w-full" />
+                  </div>
+                )}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 

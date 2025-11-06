@@ -26,6 +26,7 @@ import { filterReasoningParts } from './helpers/filter-reasoning-parts'
 import { persistStreamResults } from './helpers/persist-stream-results'
 import { prepareMessages } from './helpers/prepare-messages'
 import { processFileParts } from './helpers/process-file-parts'
+import { streamActionItems } from './helpers/stream-action-items'
 import { streamRelatedQuestions } from './helpers/stream-related-questions'
 import type { StreamContext } from './helpers/types'
 import { BaseStreamConfig } from './types'
@@ -201,7 +202,7 @@ export async function createChatStreamResponse(
 
         const responseMessages = (await result.response).messages
         perfTime('researchAgent.stream completed', llmStart)
-        // Generate related questions
+        // Generate action items and related questions
         if (responseMessages && responseMessages.length > 0) {
           // Find the last user message
           const lastUserMessage = [...modelMessages]
@@ -210,6 +211,13 @@ export async function createChatStreamResponse(
           const messagesForQuestions = lastUserMessage
             ? [lastUserMessage, ...responseMessages]
             : responseMessages
+
+          await streamActionItems(
+            writer,
+            messagesForQuestions,
+            abortSignal,
+            parentTraceId
+          )
 
           await streamRelatedQuestions(
             writer,

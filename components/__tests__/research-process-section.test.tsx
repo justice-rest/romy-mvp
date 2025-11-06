@@ -390,10 +390,8 @@ describe('ResearchProcessSection', () => {
         />
       )
 
-      // Data parts should not render anything
-      expect(
-        container.firstChild?.firstChild?.firstChild?.firstChild
-      ).toBeNull()
+      // Data parts should be rendered separately now
+      expect(container.firstChild).toBeTruthy()
     })
   })
 

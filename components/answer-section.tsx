@@ -15,6 +15,8 @@ import { CollapsibleMessage } from './collapsible-message'
 import { MarkdownMessage } from './message'
 import { MessageActions } from './message-actions'
 
+type SuggestionDisplayMode = 'related' | 'actions' | 'both'
+
 export type AnswerSectionProps = {
   content: string
   isOpen: boolean
@@ -29,6 +31,7 @@ export type AnswerSectionProps = {
     options?: ChatRequestOptions
   ) => Promise<void | string | null | undefined>
   citationMaps?: Record<string, Record<number, SearchResultItem>>
+  onSuggestionModeChange?: (mode: SuggestionDisplayMode) => void
 }
 
 export function AnswerSection({
@@ -41,7 +44,8 @@ export function AnswerSection({
   metadata,
   status,
   reload,
-  citationMaps
+  citationMaps,
+  onSuggestionModeChange
 }: AnswerSectionProps) {
   const enableShare = process.env.NEXT_PUBLIC_SUPABASE_URL !== undefined
 
@@ -75,6 +79,7 @@ export function AnswerSection({
             status={status}
             visible={showActions}
             citationMaps={citationMaps}
+            onSuggestionModeChange={onSuggestionModeChange}
           />
         </div>
       )}

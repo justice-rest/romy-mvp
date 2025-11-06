@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import React, { useState } from 'react'
+import Link from 'next/link'
 
 import { User } from '@supabase/supabase-js'
 import { Plus } from 'lucide-react'
@@ -11,8 +11,8 @@ import { cn } from '@/lib/utils'
 import { useSidebar } from '@/components/ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
-import { InstallationModal } from './installation'
 import { Button } from './ui/button'
+import { InstallationModal } from './installation'
 import { NavigationMenu, UserProfile } from './user-profile'
 
 interface HeaderProps {
