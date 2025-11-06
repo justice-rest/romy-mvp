@@ -28,12 +28,14 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
       <header
         className={cn(
           'fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-3 transition-colors duration-200',
-          'bg-background',
-          user && !open && 'pl-16 md:pl-3'
+          'bg-background'
         )}
       >
         {/* Left side */}
-        <div className="flex items-center gap-3">
+        <div className={cn(
+          "flex items-center gap-3",
+          user && !open && 'ml-12 md:ml-0'
+        )}>
           {!user && (
             <Tooltip>
               <TooltipTrigger asChild>
