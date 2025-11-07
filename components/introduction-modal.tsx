@@ -105,7 +105,13 @@ const IntroductionModal: React.FC = () => {
                     </p>
                   </div>
                   <div className='flex flex-row gap-2 mt-2'>
-                    <Button size="small" href="/" target="_blank" className="w-max mt-2 bg-gray-3 hover:bg-gray-4 text-gray-12 border border-gray-5" icon={<Code size={14} weight="bold" />}>Learn More</Button>
+                    <Button 
+                      size="small" 
+                      onClick={closeModal}
+                      className="w-max mt-2 bg-gray-3 hover:bg-gray-4 text-gray-12 border border-gray-5 cursor-pointer" 
+                    >
+                      Click here to start using it
+                    </Button>
                   </div>
                 </div>
               </div>

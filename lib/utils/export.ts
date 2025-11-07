@@ -1,8 +1,23 @@
 import jsPDF from 'jspdf'
 
-/**
- * Export text content as Markdown file
- */
+/** -------- Settings -------- */
+
+const LOGO_PATH = '/images/image.png' // change if needed
+
+// App theme colors (matching your app's design)
+const COLORS = {
+  primary: [139, 92, 246] as [number, number, number],    // Purple/violet
+  text: [15, 23, 42] as [number, number, number],         // Dark slate
+  textMuted: [100, 116, 139] as [number, number, number], // Muted slate
+  background: [255, 255, 255] as [number, number, number],// White
+  accent: [245, 245, 250] as [number, number, number],    // Very light gray
+  border: [226, 232, 240] as [number, number, number],    // Light border
+  codeBackground: [248, 250, 252] as [number, number, number], // Light code bg
+  linkColor: [99, 102, 241] as [number, number, number]   // Indigo for links
+}
+
+/** -------- Markdown Export (unchanged) -------- */
+
 export async function exportAsMarkdown(
   content: string,
   filename?: string
@@ -18,11 +33,15 @@ export async function exportAsMarkdown(
   URL.revokeObjectURL(url)
 }
 
+/** -------- Types -------- */
+
 interface TextChunk {
   text: string
   fontSize: number
   fontStyle: 'normal' | 'bold' | 'italic'
   color?: [number, number, number]
+  /** If present, this chunk is rendered as a clickable link */
+  url?: string
 }
 
 interface ContentBlock {
@@ -33,23 +52,45 @@ interface ContentBlock {
   spacing?: number
 }
 
-/**
- * Clean text of special characters that don't render well in PDFs
- */
+/** -------- Utilities -------- */
+
+/** Clean text of special characters that don't render well in PDFs */
 function cleanText(text: string): string {
   return text
-    .replace(/[\u2011\u2012\u2013\u2014\u2015]/g, '-') // Non-breaking hyphens, en-dash, em-dash to regular hyphen
-    .replace(/[\u2018\u2019]/g, "'") // Smart quotes to regular quotes
-    .replace(/[\u201C\u201D]/g, '"') // Smart double quotes to regular quotes
-    .replace(/\u2026/g, '...') // Ellipsis to three dots
-    .replace(/[\u00A0]/g, ' ') // Non-breaking space to regular space
+    .replace(/[\u2011\u2012\u2013\u2014\u2015]/g, '-')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/\u2026/g, '...')
+    .replace(/[\u00A0]/g, ' ')
 }
 
-/**
- * Process inline markdown elements in a line of text
- */
+/** Load image and return base64 + natural dimensions */
+async function loadImageMeta(imagePath: string): Promise<{ base64: string; w: number; h: number } | null> {
+  try {
+    const response = await fetch(encodeURI(imagePath)) // handles spaces in path
+    const blob = await response.blob()
+    const base64: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(blob)
+    })
+    const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+      const img = new Image()
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+      img.onerror = reject
+      img.src = base64
+    })
+    return { base64, ...dims }
+  } catch (error) {
+    console.error('Failed to load image:', error)
+    return null
+  }
+}
+
+/** -------- Inline Markdown -------- */
+
 function processInlineMarkdown(line: string): TextChunk[] {
-  // Clean the line first
   line = cleanText(line)
 
   interface InlineElement {
@@ -61,21 +102,21 @@ function processInlineMarkdown(line: string): TextChunk[] {
   }
 
   const elements: InlineElement[] = []
-  
-  // Find links first (they can contain other markdown)
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
   let match: RegExpExecArray | null
+
+  // Links
+  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
   while ((match = linkRegex.exec(line)) !== null) {
     elements.push({
       start: match.index,
       end: match.index + match[0].length,
       type: 'link',
-      content: match[2], // URL
-      displayText: match[1] // Link text
+      content: match[2],
+      displayText: match[1]
     })
   }
 
-  // Find inline code (but not in links)
+  // Inline code
   const codeRegex = /`([^`]+)`/g
   while ((match = codeRegex.exec(line)) !== null) {
     const isInLink = elements.some(e => e.type === 'link' && e.start <= match!.index && e.end > match!.index)
@@ -89,7 +130,7 @@ function processInlineMarkdown(line: string): TextChunk[] {
     }
   }
 
-  // Find bold (**text**)
+  // Bold
   const boldRegex = /\*\*(.+?)\*\*/g
   while ((match = boldRegex.exec(line)) !== null) {
     const isInOther = elements.some(e => e.start <= match!.index && e.end > match!.index)
@@ -103,8 +144,8 @@ function processInlineMarkdown(line: string): TextChunk[] {
     }
   }
 
-  // Find italic (*text* but not **text**)
-  const italicRegex = /(?<!\*)\*([^*]+?)\*(?!\*)/g
+  // Italic
+  const italicRegex = /\*(.+?)\*/g
   while ((match = italicRegex.exec(line)) !== null) {
     const isInOther = elements.some(e => e.start <= match!.index && e.end > match!.index)
     if (!isInOther) {
@@ -117,75 +158,71 @@ function processInlineMarkdown(line: string): TextChunk[] {
     }
   }
 
-  // Sort elements by position
   elements.sort((a, b) => a.start - b.start)
 
-  // Build chunks from the line
   const chunks: TextChunk[] = []
-  
-  if (elements.length === 0) {
-    chunks.push({
-      text: line,
-      fontSize: 11,
-      fontStyle: 'normal'
-    })
-    return chunks
-  }
+  let lastEnd = 0
 
-  let lastPos = 0
   for (const element of elements) {
-    // Add text before element
-    if (element.start > lastPos) {
-      const beforeText = line.substring(lastPos, element.start)
-      if (beforeText) {
+    if (element.start > lastEnd) {
+      const text = line.substring(lastEnd, element.start)
+      if (text.length > 0) {
         chunks.push({
-          text: beforeText,
-          fontSize: 11,
-          fontStyle: 'normal'
+          text,
+          fontSize: 10,
+          fontStyle: 'normal',
+          color: COLORS.text
         })
       }
     }
 
-    // Add formatted element
-    if (element.type === 'code') {
-      chunks.push({
-        text: element.content,
-        fontSize: 9,
-        fontStyle: 'normal',
-        color: [80, 80, 80]
-      })
-    } else if (element.type === 'bold') {
-      chunks.push({
-        text: element.content,
-        fontSize: 11,
-        fontStyle: 'bold'
-      })
-    } else if (element.type === 'italic') {
-      chunks.push({
-        text: element.content,
-        fontSize: 11,
-        fontStyle: 'italic'
-      })
-    } else if (element.type === 'link') {
-      chunks.push({
-        text: element.displayText || element.content,
-        fontSize: 9,
-        fontStyle: 'normal',
-        color: [0, 0, 200]
-      })
+    switch (element.type) {
+      case 'bold':
+        chunks.push({
+          text: element.content,
+          fontSize: 10,
+          fontStyle: 'bold',
+          color: COLORS.text
+        })
+        break
+      case 'italic':
+        chunks.push({
+          text: element.content,
+          fontSize: 10,
+          fontStyle: 'italic',
+          color: COLORS.text
+        })
+        break
+      case 'code':
+        chunks.push({
+          text: element.content,
+          fontSize: 9,
+          fontStyle: 'normal',
+          color: COLORS.primary
+        })
+        break
+      case 'link':
+        chunks.push({
+          text: element.displayText || element.content,
+          fontSize: 10,
+          fontStyle: 'normal',
+          color: COLORS.linkColor,
+          url: element.content
+        })
+        break
     }
 
-    lastPos = element.end
+    lastEnd = element.end
   }
 
-  // Add remaining text after last element
-  if (lastPos < line.length) {
-    const remainingText = line.substring(lastPos)
-    if (remainingText) {
+  if (lastEnd < line.length) {
+    const text = line.substring(lastEnd)
+    if (text.length > 0) {
       chunks.push({
-        text: remainingText,
-        fontSize: 11,
-        fontStyle: 'normal'
+        text,
+        fontSize: 10,
+        fontStyle: 'normal',
+        color: COLORS.text
       })
     }
   }
@@ -193,184 +230,111 @@ function processInlineMarkdown(line: string): TextChunk[] {
   return chunks
 }
 
-/**
- * Detect and parse markdown tables
- */
+/** -------- Markdown → Blocks -------- */
+
 function parseTable(lines: string[], startIndex: number): { table: { headers: string[], rows: string[][] }, endIndex: number } | null {
-  if (startIndex >= lines.length) return null
-  
   const headerLine = lines[startIndex]
-  if (!headerLine.includes('|')) return null
-  
-  // Check if next line is separator
-  if (startIndex + 1 >= lines.length) return null
   const separatorLine = lines[startIndex + 1]
-  if (!separatorLine.match(/^\|?[\s:|-]+\|/)) return null
-  
-  // Parse headers - clean markdown from headers
+  if (!headerLine || !separatorLine) return null
+  if (!separatorLine.includes('---')) return null
+
   const headers = headerLine
     .split('|')
-    .map(h => {
-      let cleaned = h.trim()
-      // Remove markdown from headers
-      cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-      cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
-      cleaned = cleaned.replace(/`(.+?)`/g, '$1') // Remove code
-      cleaned = cleanText(cleaned)
-      return cleaned
-    })
+    .map(h => h.trim())
     .filter(h => h.length > 0)
-  
+
   if (headers.length === 0) return null
-  
-  // Parse rows
+
   const rows: string[][] = []
   let i = startIndex + 2
-  
+
   while (i < lines.length) {
     const line = lines[i]
     if (!line.includes('|')) break
-    
     const cells = line
       .split('|')
-      .map(c => {
-        let cleaned = c.trim()
-        // Remove markdown from cells
-        cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
-        cleaned = cleaned.replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold
-        cleaned = cleaned.replace(/`(.+?)`/g, '$1') // Remove code
-        cleaned = cleanText(cleaned)
-        return cleaned
-      })
-      .filter((c, idx, arr) => {
-        // Filter out empty cells at start/end (from leading/trailing |)
-        if (idx === 0 && c === '') return false
-        if (idx === arr.length - 1 && c === '') return false
-        return true
-      })
-    
-    if (cells.length > 0) {
-      // Pad cells to match header count
-      while (cells.length < headers.length) {
-        cells.push('')
-      }
-      rows.push(cells.slice(0, headers.length))
-    }
+      .map(c => c.trim())
+      .filter((_, idx, arr) => idx > 0 && idx < arr.length - 1 || arr.length === headers.length)
+
+    if (cells.length > 0) rows.push(cells.slice(0, headers.length))
     i++
   }
-  
-  return {
-    table: { headers, rows },
-    endIndex: i - 1
-  }
+
+  return { table: { headers, rows }, endIndex: i }
 }
 
-/**
- * Parse markdown and convert to content blocks
- */
 function parseMarkdownToBlocks(content: string): ContentBlock[] {
-  const blocks: ContentBlock[] = []
   const lines = content.split('\n')
+  const blocks: ContentBlock[] = []
   let i = 0
-  let inCodeBlock = false
-  let codeBlockContent: string[] = []
 
   while (i < lines.length) {
     const line = lines[i]
 
-    // Handle code blocks
-    if (line.match(/^```/)) {
-      if (inCodeBlock) {
-        // End of code block
-        blocks.push({
-          type: 'codeblock',
-          code: codeBlockContent.join('\n')
-        })
-        codeBlockContent = []
-        inCodeBlock = false
-      } else {
-        // Start of code block
-        inCodeBlock = true
+    // Code blocks
+    if (line.trim().startsWith('```')) {
+      const codeLines: string[] = []
+      i++
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        codeLines.push(lines[i])
+        i++
       }
+      blocks.push({ type: 'codeblock', code: codeLines.join('\n') })
       i++
       continue
     }
 
-    if (inCodeBlock) {
-      codeBlockContent.push(line)
-      i++
-      continue
+    // Tables
+    if (line.includes('|') && lines[i + 1]?.includes('---')) {
+      const tableResult = parseTable(lines, i)
+      if (tableResult) {
+        blocks.push({ type: 'table', table: tableResult.table })
+        i = tableResult.endIndex
+        continue
+      }
     }
 
-    // Try to parse table
-    const tableResult = parseTable(lines, i)
-    if (tableResult) {
-      blocks.push({
-        type: 'table',
-        table: tableResult.table
-      })
-      i = tableResult.endIndex + 1
-      continue
-    }
-
-    // Handle headers
+    // Headers
     const headerMatch = line.match(/^(#{1,6})\s+(.+)$/)
     if (headerMatch) {
       const level = headerMatch[1].length
       const text = headerMatch[2]
-      const fontSize = level === 1 ? 18 : level === 2 ? 16 : level === 3 ? 14 : 12
-      
-      // Add spacing before header
-      if (blocks.length > 0) {
-        blocks.push({ type: 'line', chunks: [], spacing: 3 })
-      }
-      
-      const headerChunks = processInlineMarkdown(text)
-      headerChunks.forEach(chunk => {
-        chunk.fontSize = fontSize
-        chunk.fontStyle = 'bold'
+      const fontSize = Math.max(16, 24 - level * 2)
+      blocks.push({
+        type: 'line',
+        chunks: [{
+          text: cleanText(text),
+          fontSize,
+          fontStyle: 'bold',
+          color: COLORS.primary
+        }],
+        spacing: level === 1 ? 6 : 4
       })
-      blocks.push({ type: 'line', chunks: headerChunks })
-      blocks.push({ type: 'line', chunks: [], spacing: 2 })
       i++
       continue
     }
 
-    // Handle horizontal rules
-    if (line.match(/^[-*_]{3,}$/)) {
-      blocks.push({ type: 'line', chunks: [], spacing: 2 })
-      i++
-      continue
-    }
-
-    // Handle list items
-    const listMatch = line.match(/^(\s*)([-*+]|\d+\.)\s+(.+)$/)
-    if (listMatch) {
-      const indent = listMatch[1].length
-      const text = listMatch[3]
+    // Lists
+    if (line.match(/^(\s*)[-*+]\s+(.+)$/)) {
+      const match = line.match(/^(\s*)[-*+]\s+(.+)$/)!
+      const indent = match[1].length
+      const text = match[2]
       const prefix = '  '.repeat(Math.floor(indent / 2)) + '• '
-      
       const listChunks = processInlineMarkdown(text)
-      if (listChunks.length > 0) {
-        listChunks[0].text = prefix + listChunks[0].text
-      }
+      if (listChunks.length > 0) listChunks[0].text = prefix + listChunks[0].text
       blocks.push({ type: 'line', chunks: listChunks })
       i++
       continue
     }
 
-    // Handle blockquotes
+    // Blockquotes
     if (line.match(/^>\s+(.+)$/)) {
       const text = line.replace(/^>\s+/, '')
       const quoteChunks = processInlineMarkdown(text)
       quoteChunks.forEach((chunk, idx) => {
-        if (idx === 0) {
-          chunk.text = '  ' + chunk.text
-        }
+        if (idx === 0) chunk.text = '  ' + chunk.text
         chunk.fontStyle = 'italic'
-        if (!chunk.color) {
-          chunk.color = [100, 100, 100]
-        }
+        chunk.color = COLORS.textMuted
       })
       blocks.push({ type: 'line', chunks: quoteChunks })
       i++
@@ -393,9 +357,32 @@ function parseMarkdownToBlocks(content: string): ContentBlock[] {
   return blocks
 }
 
-/**
- * Export content as PDF with proper formatting
- */
+/** -------- PDF Export -------- */
+
+function addBrandHeader(
+  pdf: jsPDF,
+  pageWidth: number,
+  margin: number,
+  logo: { base64: string; w: number; h: number } | null,
+  opts?: { logoHeightMm?: number; gapMm?: number }
+) {
+  const logoHeightMm = opts?.logoHeightMm ?? 12
+  const gapMm = opts?.gapMm ?? 4
+
+  let headerHeight = 0
+
+  if (logo) {
+    const ratio = logo.w / logo.h
+    const logoW = logoHeightMm * ratio
+    const x = margin
+    const y = margin
+    pdf.addImage(logo.base64, 'PNG', x, y, logoW, logoHeightMm)
+    headerHeight = Math.max(headerHeight, logoHeightMm)
+  }
+
+  return headerHeight + gapMm + 2
+}
+
 export async function exportAsPDF(
   content: string,
   filename?: string
@@ -411,13 +398,18 @@ export async function exportAsPDF(
     const pageWidth = pdf.internal.pageSize.getWidth()
     const pageHeight = pdf.internal.pageSize.getHeight()
     const maxWidth = pageWidth - 2 * margin
-    let y = margin
+
+    // Load logo once
+    const logoMeta = await loadImageMeta(LOGO_PATH)
+
+    // Header on page 1
+    let y = margin + addBrandHeader(pdf, pageWidth, margin, logoMeta, { logoHeightMm: 12 })
 
     const blocks = parseMarkdownToBlocks(content)
 
     const addNewPage = () => {
       pdf.addPage()
-      y = margin
+      y = margin + addBrandHeader(pdf, pageWidth, margin, logoMeta, { logoHeightMm: 10 })
     }
 
     const checkPageOverflow = (requiredHeight: number) => {
@@ -429,88 +421,48 @@ export async function exportAsPDF(
     }
 
     const renderLine = (chunks: TextChunk[], spacing?: number) => {
-      if (spacing) {
-        y += spacing
-        return
-      }
-
-      if (!chunks || chunks.length === 0) {
-        y += 4
-        return
-      }
+      if (spacing) { y += spacing; return }
+      if (!chunks || chunks.length === 0) { y += 4; return }
 
       const maxFontSize = Math.max(...chunks.map(c => c.fontSize))
-      const lineHeight = maxFontSize * 0.352778 // Convert points to mm
-
+      const lineHeight = maxFontSize * 0.352778
       checkPageOverflow(lineHeight)
 
       let x = margin
 
       for (const chunk of chunks) {
-        pdf.setFontSize(chunk.fontSize)
-        const fontStyle = chunk.fontStyle === 'bold' ? 'bold' : 
-                         chunk.fontStyle === 'italic' ? 'italic' : 'normal'
+        const fontStyle = chunk.fontStyle === 'bold' ? 'bold'
+                        : chunk.fontStyle === 'italic' ? 'italic' : 'normal'
         pdf.setFont('helvetica', fontStyle)
+        pdf.setFontSize(chunk.fontSize)
+        pdf.setTextColor(...(chunk.color ?? COLORS.text))
 
-        if (chunk.color) {
-          pdf.setTextColor(chunk.color[0], chunk.color[1], chunk.color[2])
-        } else {
-          pdf.setTextColor(0, 0, 0)
-        }
-
-        // Split text into words for wrapping
         const words = chunk.text.split(' ')
-        
         for (let i = 0; i < words.length; i++) {
-          const word = words[i]
           const isLastWord = i === words.length - 1
-          const textToAdd = isLastWord ? word : word + ' '
-          const textWidth = pdf.getTextWidth(textToAdd)
-          const remainingWidth = pageWidth - x - margin
+          const token = isLastWord ? words[i] : words[i] + ' '
+          const tokenWidth = pdf.getTextWidth(token)
+          const remaining = pageWidth - x - margin
 
-          // Check if word fits on current line
-          if (textWidth <= remainingWidth) {
-            pdf.text(textToAdd, x, y + lineHeight * 0.85)
-            x += textWidth
-          } else {
-            // Word doesn't fit, move to next line
-            if (x > margin) {
-              // We're mid-line, go to next line
-              y += lineHeight
-              checkPageOverflow(lineHeight)
-              x = margin
-            }
-            
-            // Now try to render the word
-            if (textWidth <= maxWidth) {
-              // Word fits on new line
-              pdf.text(textToAdd, x, y + lineHeight * 0.85)
-              x += textWidth
-            } else {
-              // Word is too long, need to break it
-              let remainingWord = textToAdd
-              while (remainingWord.length > 0) {
-                let fitLength = remainingWord.length
-                while (fitLength > 0 && pdf.getTextWidth(remainingWord.substring(0, fitLength)) > maxWidth) {
-                  fitLength--
-                }
-                
-                if (fitLength === 0) fitLength = 1 // Always make progress
-                
-                const part = remainingWord.substring(0, fitLength)
-                pdf.text(part, x, y + lineHeight * 0.85)
-                remainingWord = remainingWord.substring(fitLength)
-                
-                if (remainingWord.length > 0) {
-                  y += lineHeight
-                  checkPageOverflow(lineHeight)
-                  x = margin
-                } else {
-                  x += pdf.getTextWidth(part)
-                }
-              }
-            }
+          // wrap if needed
+          if (tokenWidth > remaining && x > margin) {
+            y += lineHeight
+            checkPageOverflow(lineHeight)
+            x = margin
           }
+
+          const baselineY = y + lineHeight * 0.85
+
+          // clickable link if url present (ts cast for jspdf typings)
+          if (chunk.url) {
+            ;(pdf as any).textWithLink
+              ? (pdf as any).textWithLink(token, x, baselineY, { url: chunk.url })
+              : pdf.text(token, x, baselineY) // graceful fallback
+          } else {
+            pdf.text(token, x, baselineY)
+          }
+
+          x += tokenWidth
         }
       }
 
@@ -524,13 +476,11 @@ export async function exportAsPDF(
       const cellPadding = 1
       const maxCellWidth = colWidth - (padding * 2)
 
-      // Calculate row heights dynamically based on content
-      const headerHeight = 9
-      
-      // Calculate heights for each row
+      const headerHeight = 10
+
       pdf.setFontSize(9)
       pdf.setFont('helvetica', 'normal')
-      
+
       const rowHeights: number[] = []
       for (const row of table.rows) {
         let maxLines = 1
@@ -543,121 +493,106 @@ export async function exportAsPDF(
         rowHeights.push(rowHeight)
       }
 
-      // Calculate total table height
       const tableHeight = headerHeight + rowHeights.reduce((sum, h) => sum + h, 0)
       checkPageOverflow(tableHeight)
 
-      const startY = y
-
-      // Draw header background
-      pdf.setFillColor(230, 230, 230)
+      // Header with brand color
+      pdf.setFillColor(...COLORS.primary)
       pdf.rect(margin, y, maxWidth, headerHeight, 'F')
-      
-      // Draw header text
+
       pdf.setFontSize(10)
       pdf.setFont('helvetica', 'bold')
-      pdf.setTextColor(0, 0, 0)
-      
+      pdf.setTextColor(255, 255, 255)
+
       for (let i = 0; i < table.headers.length; i++) {
         const x = margin + (i * colWidth) + padding
         const headerText = table.headers[i]
         const wrappedText = pdf.splitTextToSize(headerText, maxCellWidth)
-        const displayText = wrappedText[0] // Just show first line for headers
+        const displayText = wrappedText[0]
         pdf.text(displayText, x, y + headerHeight * 0.65)
       }
-      
+
       y += headerHeight
 
-      // Draw rows
+      // Rows
       pdf.setFont('helvetica', 'normal')
       pdf.setFontSize(9)
-      
+      pdf.setTextColor(...COLORS.text)
+
       for (let rowIdx = 0; rowIdx < table.rows.length; rowIdx++) {
         const row = table.rows[rowIdx]
         const rowHeight = rowHeights[rowIdx]
-        
-        // Alternate row colors
+
+        // zebra
         if (rowIdx % 2 === 0) {
-          pdf.setFillColor(248, 248, 248)
+          pdf.setFillColor(...COLORS.accent)
           pdf.rect(margin, y, maxWidth, rowHeight, 'F')
         }
-        
+
         for (let colIdx = 0; colIdx < colCount; colIdx++) {
           const x = margin + (colIdx * colWidth) + padding
           const cellText = row[colIdx] || ''
-          
-          // Wrap text to fit in cell
           const wrappedLines = pdf.splitTextToSize(cellText, maxCellWidth)
-          
-          // Draw each line of wrapped text
           let lineY = y + 4
           for (const line of wrappedLines) {
             pdf.text(line, x, lineY)
             lineY += 4
           }
         }
-        
+
         y += rowHeight
       }
 
-      // Draw table borders
-      pdf.setDrawColor(180, 180, 180)
-      pdf.setLineWidth(0.1)
-      
-      // Outer border
-      pdf.rect(margin, startY, maxWidth, tableHeight)
-      
-      // Vertical lines between columns
-      for (let i = 1; i < colCount; i++) {
-        const x = margin + (i * colWidth)
-        pdf.line(x, startY, x, startY + tableHeight)
+      // Border lines
+      pdf.setDrawColor(...COLORS.border)
+      pdf.setLineWidth(0.2)
+
+      // Horizontal
+      let currentY = y - rowHeights.reduce((sum, h) => sum + h, 0) - headerHeight
+      pdf.line(margin, currentY, margin + maxWidth, currentY)
+      currentY += headerHeight
+      pdf.line(margin, currentY, margin + maxWidth, currentY)
+      for (const h of rowHeights) {
+        currentY += h
+        pdf.line(margin, currentY, margin + maxWidth, currentY)
       }
-      
-      // Horizontal line after header
-      pdf.line(margin, startY + headerHeight, margin + maxWidth, startY + headerHeight)
-      
-      // Horizontal lines between rows
-      let currentY = startY + headerHeight
-      for (const rowHeight of rowHeights) {
-        currentY += rowHeight
-        if (currentY < startY + tableHeight) {
-          pdf.line(margin, currentY, margin + maxWidth, currentY)
-        }
+
+      // Vertical
+      for (let i = 0; i <= colCount; i++) {
+        const x = margin + i * colWidth
+        const startY = y - rowHeights.reduce((sum, h) => sum + h, 0) - headerHeight
+        pdf.line(x, startY, x, y)
       }
-      
-      y += 5 // Add spacing after table
+
+      y += 5
     }
 
     const renderCodeBlock = (code: string) => {
-      const lines = code.split('\n')
-      const lineHeight = 4.5
+      const codeLines = code.split('\n')
+      const lineHeight = 4
       const padding = 3
-      
-      const blockHeight = (lines.length * lineHeight) + (padding * 2)
-      checkPageOverflow(blockHeight)
-      
-      // Background
-      pdf.setFillColor(245, 245, 245)
-      pdf.rect(margin, y, maxWidth, blockHeight, 'F')
-      
-      // Border
-      pdf.setDrawColor(220, 220, 220)
-      pdf.setLineWidth(0.1)
-      pdf.rect(margin, y, maxWidth, blockHeight)
-      
-      // Code text
+      const totalHeight = codeLines.length * lineHeight + padding * 2
+
+      checkPageOverflow(totalHeight)
+
+      // Background panel
+      pdf.setFillColor(...COLORS.codeBackground)
+      ;(pdf as any).roundedRect
+        ? (pdf as any).roundedRect(margin, y, maxWidth, totalHeight, 2, 2, 'F')
+        : pdf.rect(margin, y, maxWidth, totalHeight, 'F')
+
       pdf.setFontSize(9)
       pdf.setFont('courier', 'normal')
-      pdf.setTextColor(50, 50, 50)
-      
+      pdf.setTextColor(...COLORS.text)
+
       let codeY = y + padding + 3
-      for (const line of lines) {
-        const cleanedLine = cleanText(line)
-        pdf.text(cleanedLine, margin + padding, codeY)
+      for (const line of codeLines) {
+        const cleanLine = cleanText(line)
+        pdf.text(cleanLine, margin + padding, codeY)
         codeY += lineHeight
       }
-      
-      y += blockHeight + 4
+
+      y += totalHeight + 3
     }
 
     // Render all blocks
@@ -671,9 +606,22 @@ export async function exportAsPDF(
       }
     }
 
-    pdf.save(filename || `chat-export-${new Date().toISOString().split('T')[0]}.pdf`)
+    // Footer with page numbers
+    const pageCount = (pdf as any).internal?.pages?.length ? (pdf as any).internal.pages.length - 1 : 1
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i)
+      pdf.setFontSize(8)
+      pdf.setFont('helvetica', 'normal')
+      pdf.setTextColor(...COLORS.textMuted)
+      const pageText = `Page ${i} of ${pageCount}`
+      const textWidth = pdf.getTextWidth(pageText)
+      pdf.text(pageText, (pageWidth - textWidth) / 2, pageHeight - 10)
+    }
+
+    const pdfFilename = filename || `romy-export-${new Date().toISOString().split('T')[0]}.pdf`
+    pdf.save(pdfFilename)
   } catch (error) {
-    console.error('Error exporting PDF:', error)
-    throw new Error('Failed to export PDF')
+    console.error('Error generating PDF:', error)
+    throw error
   }
 }

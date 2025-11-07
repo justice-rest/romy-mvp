@@ -58,15 +58,6 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
               </TooltipContent>
             </Tooltip>
           )}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setIsInstallationModalOpen(true)}
-            className="rounded-lg hover:bg-accent/50 transition-all hover:scale-105 pointer-events-auto"
-          >
-            Founders
-          </Button>
         </div>
 
         {/* Right side - Navigation Menu for unauthenticated users */}

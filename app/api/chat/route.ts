@@ -13,7 +13,7 @@ import { perfLog, perfTime } from '@/lib/utils/perf-logging'
 import { resetAllCounters } from '@/lib/utils/perf-tracking'
 import { isProviderEnabled } from '@/lib/utils/registry'
 
-export const maxDuration = 300
+export const maxDuration = 600
 
 export async function POST(req: Request) {
   const startTime = performance.now()

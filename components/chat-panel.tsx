@@ -16,13 +16,13 @@ import { cn } from '@/lib/utils'
 import { useAuthCheck } from '@/hooks/use-auth-check'
 
 import { useArtifact } from './artifact/artifact-context'
+import { AudioLinesIcon, AudioLinesIconHandle } from './ui/audio-lines'
 import { Button } from './ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 import { ActionButtons, ActionButtonsHandle } from './action-buttons'
 import { FileUploadButton } from './file-upload-button'
 import { SearchModeSelector } from './search-mode-selector'
 import { UploadedFileList } from './uploaded-file-list'
-import { AudioLinesIcon, AudioLinesIconHandle } from './ui/audio-lines'
-import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip'
 
 // Constants for timing delays
 const INPUT_UPDATE_DELAY_MS = 10 // Delay to ensure input value is updated before form submission
@@ -433,16 +433,25 @@ export function ChatPanel({
                 )}
                 <SearchModeSelector
                   onResearchTypeClick={category => {
-                    // Map category label to action button key (lowercase)
-                    const categoryKey = category.toLowerCase()
-                    // Trigger ActionButtons to show prompt samples
-                    if (actionButtonsRef.current && messages.length === 0) {
-                      actionButtonsRef.current.setActiveCategory(categoryKey)
+                    const currentInput = input.trim()
+                    
+                    if (currentInput === '') {
+                      // Empty input: set category and show prompt samples
+                      const categoryKey = category.toLowerCase()
+                      if (actionButtonsRef.current && messages.length === 0) {
+                        actionButtonsRef.current.setActiveCategory(categoryKey)
+                      }
+                      handleInputChange({
+                        target: { value: category }
+                      } as React.ChangeEvent<HTMLTextAreaElement>)
+                    } else {
+                      // Has input: append category without showing prompt samples
+                      const newInput = `${currentInput} - ${category}`
+                      handleInputChange({
+                        target: { value: newInput }
+                      } as React.ChangeEvent<HTMLTextAreaElement>)
                     }
-                    // Set the category in the input
-                    handleInputChange({
-                      target: { value: category }
-                    } as React.ChangeEvent<HTMLTextAreaElement>)
+                    
                     // Focus the input
                     inputRef.current?.focus()
                   }}

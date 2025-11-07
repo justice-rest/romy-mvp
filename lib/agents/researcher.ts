@@ -116,7 +116,7 @@ export function createResearcher({
         )
         systemPrompt = QUICK_MODE_PROMPT
         activeToolsList = ['search', 'fetch']
-        maxSteps = 20
+        maxSteps = 50
         searchTool = wrapSearchToolForQuickMode(originalSearchTool)
         break
 
@@ -129,9 +129,9 @@ export function createResearcher({
           activeToolsList.push('todoWrite')
         }
         console.log(
-          `[Researcher] Adaptive mode: maxSteps=50, modelType=${modelType}, tools=[${activeToolsList.join(', ')}]`
+          `[Researcher] Adaptive mode: maxSteps=100, modelType=${modelType}, tools=[${activeToolsList.join(', ')}]`
         )
-        maxSteps = 50
+        maxSteps = 100
         searchTool = originalSearchTool
         break
     }
