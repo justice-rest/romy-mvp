@@ -33,7 +33,7 @@ export default async function AppSidebar() {
       <SidebarHeader className="flex flex-row justify-between items-center p-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="font-semibold text-sm">Rōmy</span>
-          <BetaBadge />
+          {/* <BetaBadge /> */}
         </Link>
         <SidebarTrigger />
       </SidebarHeader>
