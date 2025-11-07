@@ -10,9 +10,9 @@ import type { SearchResultItem } from '@/lib/types'
 import { cn } from '@/lib/utils'
 import { processCitations } from '@/lib/utils/citation'
 
+import { ChatTextHighlighter } from './ui/chat-text-highlighter'
 import { CitationProvider } from './citation-context'
 import { Citing } from './custom-link'
-import { ChatTextHighlighter } from './ui/chat-text-highlighter'
 
 import 'katex/dist/katex.min.css'
 

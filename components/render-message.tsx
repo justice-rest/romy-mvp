@@ -10,6 +10,7 @@ import type {
   UITools
 } from '@/lib/types/ai'
 import type { DynamicToolPart } from '@/lib/types/dynamic-tools'
+import { getCookie } from '@/lib/utils/cookies'
 
 import { AnswerSection } from './answer-section'
 import { DynamicToolDisplay } from './dynamic-tool-display'
@@ -50,8 +51,12 @@ export function RenderMessage({
   isLatestMessage = false,
   citationMaps = {}
 }: RenderMessageProps) {
-  const [suggestionMode, setSuggestionMode] =
-    useState<SuggestionDisplayMode>('both')
+  const [suggestionMode, setSuggestionMode] = useState<SuggestionDisplayMode>(
+    () => {
+      const saved = getCookie('suggestionDisplayMode')
+      return (saved as SuggestionDisplayMode) || 'actions'
+    }
+  )
 
   const handleSuggestionModeChange = (mode: SuggestionDisplayMode) => {
     setSuggestionMode(mode)

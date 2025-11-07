@@ -85,8 +85,8 @@ export function MessageActions({
   }
 
   const suggestionModeOptions = [
-    { value: 'related' as const, label: 'Related Questions' },
     { value: 'actions' as const, label: 'Action' },
+    { value: 'related' as const, label: 'Related Questions' },
     { value: 'both' as const, label: 'Both' }
   ]
 

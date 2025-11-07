@@ -256,24 +256,20 @@ function shouldShowPart(
 ): boolean {
   if (!isDataPart(part)) return true
 
-  if (!suggestionMode || suggestionMode === 'both') return true
+  // Show both types when mode is 'both'
+  if (suggestionMode === 'both') return true
 
-  if (part.type === 'data-actionItems' && suggestionMode === 'actions')
-    return true
-  if (
-    part.type === 'data-relatedQuestions' &&
-    suggestionMode === 'related'
-  )
-    return true
+  // When mode is 'actions', show only action items
+  if (suggestionMode === 'actions') {
+    return part.type === 'data-actionItems'
+  }
 
-  if (part.type === 'data-actionItems' && suggestionMode === 'related')
-    return false
-  if (
-    part.type === 'data-relatedQuestions' &&
-    suggestionMode === 'actions'
-  )
-    return false
+  // When mode is 'related', show only related questions
+  if (suggestionMode === 'related') {
+    return part.type === 'data-relatedQuestions'
+  }
 
+  // Default to showing both if mode is undefined
   return true
 }
 

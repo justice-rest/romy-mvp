@@ -556,3 +556,61 @@
 .dark .not-found-grid div:hover {
   opacity: 1;
 }
+
+/* KaTeX custom styling for better aesthetics */
+.katex {
+  font-size: 1.05em;
+}
+
+.katex-display {
+  @apply my-4 overflow-x-auto overflow-y-hidden;
+}
+
+.katex-display > .katex {
+  @apply text-center;
+}
+
+/* Light mode KaTeX colors */
+:root .katex .mord.text {
+  color: oklch(0.2435 0 0);
+}
+
+:root .katex {
+  color: oklch(0.2435 0 0);
+}
+
+:root .katex .mspace {
+  background-color: transparent;
+}
+
+/* Dark mode KaTeX colors */
+.dark .katex .mord.text {
+  color: oklch(0.9491 0 0);
+}
+
+.dark .katex {
+  color: oklch(0.9491 0 0);
+}
+
+/* KaTeX in prose content */
+.prose .katex-display,
+.prose-sm .katex-display {
+  @apply my-3 px-2;
+}
+
+/* Better KaTeX scrollbar for long equations */
+.katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+
+.katex-display::-webkit-scrollbar-track {
+  @apply bg-muted/30 rounded;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  @apply bg-muted-foreground/30 rounded;
+}
+
+.katex-display::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
