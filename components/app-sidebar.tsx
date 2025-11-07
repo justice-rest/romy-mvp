@@ -30,8 +30,8 @@ export default async function AppSidebar() {
 
   return (
     <Sidebar side="left" variant="sidebar" collapsible="offcanvas">
-      <SidebarHeader className="flex flex-row justify-between items-center pt-4">
-        <Link href="/" className="flex items-center gap-2 px-2 py-3">
+      <SidebarHeader className="flex flex-row justify-between items-center p-4">
+        <Link href="/" className="flex items-center gap-2">
           <span className="font-semibold text-sm">Rōmy</span>
           <BetaBadge />
         </Link>
