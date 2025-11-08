@@ -535,7 +535,7 @@ export function Chat({
             : undefined
         }
       />
-      {!loading && !isAuthenticated/>}
+      {!loading && !isAuthenticated}
     </div>
   )
 }
