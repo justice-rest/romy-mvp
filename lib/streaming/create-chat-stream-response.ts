@@ -183,7 +183,6 @@ export async function createChatStreamResponse(
           `researchAgent.stream - Start: model=${context.modelId}, searchMode=${searchMode}`
         )
         const result = researchAgent.stream({ messages: modelMessages })
-        result.consumeStream()
         // Stream with the research agent, including metadata
         writer.merge(
           result.toUIMessageStream({
