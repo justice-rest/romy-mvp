@@ -7,6 +7,7 @@ import { processFile } from '@/lib/utils/file-processor'
  * For supported file types (XLSX, CSV), this helper fetches the file,
  * extracts its content as markdown tables, and replaces the file part
  * with a text part so the AI can analyze the data.
+ * For images and PDFs, converts file parts to image parts for multimodal support.
  *
  * @param messages - Array of UI messages from the chat history
  * @returns Messages with processed file content
@@ -40,8 +41,15 @@ export async function processFileParts(
                   type: 'text' as const,
                   text: `Content from file "${filePart.filename || 'uploaded file'}":\n\n${content}`
                 })
+              } else if (filePart.mediaType.startsWith('image/') || filePart.mediaType === 'application/pdf') {
+                // Convert file part to image part for images and PDFs
+                newParts.push({
+                  type: 'image' as const,
+                  image: filePart.url,
+                  mimeType: filePart.mediaType
+                })
               } else {
-                // Keep the original file part for unsupported types (images, PDFs)
+                // Keep the original file part for other unsupported types
                 newParts.push(part)
               }
             } catch (error) {
