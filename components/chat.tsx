@@ -27,7 +27,6 @@ import { ChatPanel } from './chat-panel'
 import { Crowd } from './crowd'
 import { DragOverlay } from './drag-overlay'
 import { ErrorModal } from './error-modal'
-import IntroductionModal from './introduction-modal'
 import { Greeting } from './introductionModal'
 
 // Define section structure
@@ -536,7 +535,7 @@ export function Chat({
             : undefined
         }
       />
-      {!loading && !isAuthenticated && <IntroductionModal />}
+      {!loading && !isAuthenticated/>}
     </div>
   )
 }
