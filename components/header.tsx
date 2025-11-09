@@ -27,46 +27,20 @@ export const Header: React.FC<HeaderProps> = ({ user }) => {
     <TooltipProvider>
       <header
         className={cn(
-          'fixed top-0 left-0 right-0 z-30 flex justify-between items-center p-3 transition-colors duration-200',
-          'bg-background'
+          'absolute top-0 right-0 p-3 flex justify-between items-center z-10 backdrop-blur-sm lg:backdrop-blur-none bg-background/80 lg:bg-transparent transition-[width] duration-200 ease-linear',
+          open ? 'md:w-[calc(100%-var(--sidebar-width))]' : 'md:w-full',
+          'w-full'
         )}
       >
-        {/* Left side */}
-        <div className={cn(
-          "flex items-center gap-3",
-          user && !open && 'ml-12 md:ml-0'
-        )}>
-          {!user && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    className="rounded-lg bg-accent hover:bg-accent/80 group transition-all hover:scale-105 pointer-events-auto"
-                  >
-                    <Plus size={16} className="group-hover:rotate-90 transition-all" />
-                    <span className="text-sm ml-1.5 group-hover:block hidden animate-in fade-in duration-300">
-                      New
-                    </span>
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" sideOffset={4}>
-                Start a new chat
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
+        {/* This div can be used for a logo or title on the left if needed */}
+        <div></div>
 
-        {/* Right side - Navigation Menu for unauthenticated users */}
-        {!user && (
-          <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center gap-2">
+          {!user && (
             <NavigationMenu />
-            <UserProfile user={user} />
-          </div>
-        )}
+          )}
+          <UserProfile user={user} />
+        </div>
       </header>
       <InstallationModal
         open={isInstallationModalOpen}

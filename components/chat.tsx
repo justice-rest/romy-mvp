@@ -485,29 +485,27 @@ export function Chat({
         error={error}
       />
       
-      <div className={cn('w-full bg-background shrink-0', messages.length > 0 ? 'sticky bottom-0 px-2 pb-4' : 'px-6')}>
-        {messages.length === 0 && <Greeting />}
-        <ChatPanel
-          chatId={chatId}
-          input={input}
-          handleInputChange={handleInputChange}
-          setInput={setInputDirectly}
-          handleSubmit={onSubmit}
-          status={status}
-          messages={messages}
-          setMessages={setMessages}
-          stop={stop}
-          query={query}
-          append={(message: any) => {
-            sendMessage(message)
-          }}
-          showScrollToBottomButton={!isAtBottom}
-          uploadedFiles={uploadedFiles}
-          setUploadedFiles={setUploadedFiles}
-          scrollContainerRef={scrollContainerRef}
-          onNewChat={handleNewChat}
-        />
-      </div>
+      {messages.length === 0 && <Greeting />}
+      <ChatPanel
+        chatId={chatId}
+        input={input}
+        handleInputChange={handleInputChange}
+        setInput={setInputDirectly}
+        handleSubmit={onSubmit}
+        status={status}
+        messages={messages}
+        setMessages={setMessages}
+        stop={stop}
+        query={query}
+        append={(message: any) => {
+          sendMessage(message)
+        }}
+        showScrollToBottomButton={!isAtBottom}
+        uploadedFiles={uploadedFiles}
+        setUploadedFiles={setUploadedFiles}
+        scrollContainerRef={scrollContainerRef}
+        onNewChat={handleNewChat}
+      />
 
       {messages.length === 0 && (
         <div className="fixed left-0 right-0 bottom-0 z-0 pointer-events-none top-[60vh] sm:top-[58vh] md:top-[52vh]">

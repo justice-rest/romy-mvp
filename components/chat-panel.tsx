@@ -291,7 +291,16 @@ export function ChatPanel({
   }
 
   return (
-    <>
+    <div
+      className={cn(
+        'w-full bg-background group/form-container shrink-0',
+        messages.length > 0 ? 'sticky bottom-0 px-2 pb-4' : 'px-6'
+      )}
+    >
+      {messages.length === 0 && (
+        <div className="mb-10 flex flex-col items-center gap-4">
+        </div>
+      )}
       {uploadedFiles.length > 0 && (
         <UploadedFileList files={uploadedFiles} onRemove={handleFileRemove} />
       )}
@@ -311,7 +320,7 @@ export function ChatPanel({
           setIsInputFocused(false)
           inputRef.current?.blur()
         }}
-        className="max-w-3xl w-full mx-auto relative"
+        className={cn('max-w-full md:max-w-3xl w-full mx-auto relative')}
       >
         {/* Scroll to bottom button - only shown when showScrollToBottomButton is true */}
         {showScrollToBottomButton && messages.length > 0 && (
@@ -537,6 +546,6 @@ export function ChatPanel({
           />
         )}
       </form>
-    </>
+    </div>
   )
 }
