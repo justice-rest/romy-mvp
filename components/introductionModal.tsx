@@ -25,7 +25,7 @@ export const Greeting = () => {
   return (
     <div
       className="mx-auto flex w-full max-w-3xl flex-col justify-center px-4 md:px-4"
-      style={{ height: '50%' }}
+      style={{ height: '10%' }}
       key="overview"
     >
       <motion.div
