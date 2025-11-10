@@ -201,7 +201,7 @@ Model configuration files use the following structure:
 }
 ```
 
-Define all four combinations to control which model runs for every search mode (`quick`, `adaptive`) and preference (`speed`, `quality`). For example, you can pair `quick/speed` with `gemini-2.5-flash-lite` while keeping `adaptive/quality` on GPT-5. The default config ships with OpenAI models for every slot so Rōmy works out-of-the-box.
+Define all four combinations to control which model runs for every search mode (`quick`, `adaptive`) and preference (`speed`, `quality`). For example, you can pair `quick/speed` with `sonar` while keeping `adaptive/quality` on GPT-5. The default config ships with Perplexity Sonar for quick and adaptive modes so Rōmy works out-of-the-box once you add your API key.
 
 ### Supported Providers
 
@@ -210,6 +210,14 @@ Define all four combinations to control which model runs for every search mode (
 ```bash
 OPENAI_API_KEY=[YOUR_API_KEY]
 ```
+
+#### Perplexity
+
+```bash
+PERPLEXITY_API_KEY=[YOUR_API_KEY]
+```
+
+See the [Perplexity provider guide](./providers/perplexity.mdx) for detailed setup instructions, optional configuration, and model capabilities.
 
 #### Google Generative AI
 

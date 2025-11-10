@@ -5,11 +5,16 @@ import { createOpenAI, openai } from '@ai-sdk/openai'
 import { createProviderRegistry, LanguageModel } from 'ai'
 import { createOllama } from 'ollama-ai-provider-v2'
 
+import { createPerplexity } from '@/lib/providers/perplexity'
+
 // Build providers object conditionally
 const providers: Record<string, any> = {
   openai,
   anthropic,
   google,
+  perplexity: createPerplexity({
+    apiKey: process.env.PERPLEXITY_API_KEY
+  }),
   'openai-compatible': createOpenAI({
     apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
     baseURL: process.env.OPENAI_COMPATIBLE_API_BASE_URL
@@ -42,6 +47,8 @@ export function isProviderEnabled(providerId: string): boolean {
       return !!process.env.ANTHROPIC_API_KEY
     case 'google':
       return !!process.env.GOOGLE_GENERATIVE_AI_API_KEY
+    case 'perplexity':
+      return !!process.env.PERPLEXITY_API_KEY
     case 'openai-compatible':
       return (
         !!process.env.OPENAI_COMPATIBLE_API_KEY &&

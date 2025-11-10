@@ -117,7 +117,7 @@ DATABASE_URL=        # PostgreSQL connection string
 ### Optional Features
 
 - Chat history: Set `ENABLE_SAVE_CHAT_HISTORY=true` and configure Redis
-- Alternative AI providers: Add corresponding API keys (ANTHROPIC_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, etc.)
+- Alternative AI providers: Add corresponding API keys (ANTHROPIC_API_KEY, PERPLEXITY_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, etc.)
 - Alternative search: Configure SEARCH_API and provider-specific settings
 - Sharing: Set `NEXT_PUBLIC_ENABLE_SHARE=true`
 
