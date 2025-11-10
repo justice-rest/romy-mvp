@@ -217,6 +217,8 @@ OPENAI_API_KEY=[YOUR_API_KEY]
 PERPLEXITY_API_KEY=[YOUR_API_KEY]
 ```
 
+See the [Perplexity provider guide](./providers/perplexity.mdx) for detailed setup instructions, optional configuration, and model capabilities.
+
 #### Google Generative AI
 
 ```bash

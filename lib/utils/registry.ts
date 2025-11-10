@@ -5,41 +5,15 @@ import { createOpenAI, openai } from '@ai-sdk/openai'
 import { createProviderRegistry, LanguageModel } from 'ai'
 import { createOllama } from 'ollama-ai-provider-v2'
 
+import { createPerplexity } from '@/lib/providers/perplexity'
+
 // Build providers object conditionally
 const providers: Record<string, any> = {
   openai,
   anthropic,
   google,
-  perplexity: createOpenAI({
-    apiKey: process.env.PERPLEXITY_API_KEY,
-    baseURL: 'https://api.perplexity.ai',
-    fetch: async (input, init) => {
-      const request = new Request(input, init)
-      const requestUrl = new URL(request.url)
-
-      if (requestUrl.pathname === '/responses') {
-        requestUrl.pathname = '/chat/completions'
-        // The Vercel AI SDK targets OpenAI's Responses API by default.
-        // Perplexity's Sonar models only expose the Chat Completions
-        // compatible surface, so we rewrite the request path to match.
-
-        const clonedRequest = request.clone()
-        const rewrittenRequestInit: RequestInit = {
-          body: clonedRequest.body,
-          headers: clonedRequest.headers,
-          method: clonedRequest.method
-        }
-
-        if ('duplex' in clonedRequest) {
-          ;(rewrittenRequestInit as Record<string, unknown>).duplex =
-            (clonedRequest as unknown as { duplex?: string }).duplex
-        }
-
-        return fetch(new Request(requestUrl, rewrittenRequestInit))
-      }
-
-      return fetch(request)
-    }
+  perplexity: createPerplexity({
+    apiKey: process.env.PERPLEXITY_API_KEY
   }),
   'openai-compatible': createOpenAI({
     apiKey: process.env.OPENAI_COMPATIBLE_API_KEY,
