@@ -239,12 +239,14 @@ Get your API key at: https://www.perplexity.ai/settings/api
 - `sonar-pro` - 200K context window, enhanced quality
 - `sonar-reasoning` - 128K context window with reasoning capabilities
 - `sonar-reasoning-pro` - 128K context window with advanced reasoning
+- `sonar-deep-research` - 128K context window for expert research
 
 **Features:**
 
-- Real-time web-grounded responses
-- Citation support with source attribution
-- OpenAI-compatible API format
+- Real-time web-grounded responses with automatic citations
+- Source attribution in `sources` property of API responses
+- Native AI SDK integration via `@ai-sdk/perplexity`
+- PDF file support for document analysis
 - Optimized for search and research tasks
 
 #### Vercel AI Gateway
