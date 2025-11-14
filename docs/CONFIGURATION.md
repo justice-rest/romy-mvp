@@ -201,7 +201,7 @@ Model configuration files use the following structure:
 }
 ```
 
-Define all four combinations to control which model runs for every search mode (`quick`, `adaptive`) and preference (`speed`, `quality`). For example, you can pair `quick/speed` with `gemini-2.5-flash-lite` while keeping `adaptive/quality` on GPT-5. The default config ships with OpenAI models for every slot so Rōmy works out-of-the-box.
+Define all four combinations to control which model runs for every search mode (`quick`, `adaptive`) and preference (`speed`, `quality`). For example, you can pair `quick/speed` with `sonar` while keeping `adaptive/quality` on `sonar-pro`. The default config ships with Perplexity Sonar models for every slot so Rōmy works out-of-the-box.
 
 ### Supported Providers
 
@@ -222,6 +222,32 @@ GOOGLE_GENERATIVE_AI_API_KEY=[YOUR_API_KEY]
 ```bash
 ANTHROPIC_API_KEY=[YOUR_API_KEY]
 ```
+
+#### Perplexity
+
+[Perplexity](https://www.perplexity.ai/) provides Sonar models with real-time web search capabilities and grounded responses.
+
+```bash
+PERPLEXITY_API_KEY=[YOUR_API_KEY]
+```
+
+Get your API key at: https://www.perplexity.ai/settings/api
+
+**Available Models:**
+
+- `sonar` - 128K context window, optimized for speed
+- `sonar-pro` - 200K context window, enhanced quality
+- `sonar-reasoning` - 128K context window with reasoning capabilities
+- `sonar-reasoning-pro` - 128K context window with advanced reasoning
+- `sonar-deep-research` - 128K context window for expert research
+
+**Features:**
+
+- Real-time web-grounded responses with automatic citations
+- Source attribution in `sources` property of API responses
+- Native AI SDK integration via `@ai-sdk/perplexity`
+- PDF file support for document analysis
+- Optimized for search and research tasks
 
 #### Vercel AI Gateway
 

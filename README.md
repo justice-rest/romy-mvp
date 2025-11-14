@@ -91,6 +91,7 @@ Your feedback helps make Rōmy better for everyone!
 
 - OpenAI (Default)
 - Anthropic Claude
+- Perplexity Sonar
 - Google Gemini
 - Vercel AI Gateway
 - Ollama
